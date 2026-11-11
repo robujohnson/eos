@@ -172,20 +172,6 @@ table.lb{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
 .low .pos-v,.low .neg-v{color:inherit}
 
 /* ---------- teams / results ---------- */
-.teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-.team{padding:16px;display:grid;grid-template-columns:56px 1fr;gap:4px 14px;align-items:center}
-.team .logo{width:56px;height:56px}
-.team .tn{font-weight:900;font-size:20px;line-height:1.1}
-.team .ts{font-size:12px;color:var(--muted)}
-.team .tstats{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:10px}
-.team .tstats div{background:var(--panel2);border-radius:8px;padding:6px 4px;text-align:center}
-.team .tstats b{display:block;font-size:18px;font-weight:800;line-height:1.2}
-.team .tstats span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
-.team .roster{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;margin-top:10px}
-.team .roster a{color:#cbd5e1;text-decoration:none;cursor:pointer}
-.team .roster a:hover{color:var(--accent)}
-.team{cursor:pointer;transition:border-color .15s}
-.team:hover,.team:focus-visible{border-color:rgba(249,115,22,.5);outline:none}
 .st tbody tr{cursor:pointer} .st tbody tr:hover{background:rgba(249,115,22,.06)}
 .mteam{cursor:pointer}
 .tm-head{display:flex;align-items:center;gap:14px;margin:6px 0 14px}
@@ -400,7 +386,7 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
 <div class="sitebar"><div class="sitebar-in">
   <a class="home" href="/eos/" title="EOS 14 stats home"><img src="/eos/favicon.svg" alt="EOS" width="42" height="42"><span><span class="sb-title">Elisa Open Suomi 14</span><br><span class="sb-sub">Player &amp; team stats</span></span></a>
 </div>
-<nav class="tabs" aria-label="Sections"><div class="tabs-in" id="tabs"><button type="button" data-target="player-section">Player</button><button type="button" data-target="sec-leaderboard">Leaderboard</button><button type="button" data-target="sec-leaders">Stat leaders</button><button type="button" data-target="sec-impact">Impact map</button><button type="button" data-target="sec-teams">Teams</button><button type="button" data-target="sec-standings">Standings</button><button type="button" data-target="sec-results">Results</button><button type="button" data-target="sec-upcoming">Upcoming</button><a class="tab-link" href="/eos/faceit/">FACEIT ELO <span aria-hidden="true">↗</span></a></div></nav>
+<nav class="tabs" aria-label="Sections"><div class="tabs-in" id="tabs"><button type="button" data-target="player-section">Player</button><button type="button" data-target="sec-leaderboard">Leaderboard</button><button type="button" data-target="sec-leaders">Stat leaders</button><button type="button" data-target="sec-impact">Impact map</button><button type="button" data-target="sec-standings">Standings</button><button type="button" data-target="sec-results">Results</button><button type="button" data-target="sec-upcoming">Upcoming</button><a class="tab-link" href="/eos/faceit/">FACEIT ELO <span aria-hidden="true">↗</span></a></div></nav>
 </div>
 <div class="wrap">
   <header class="top">
@@ -449,11 +435,6 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
     </div>
   </section>
 
-  <section id="sec-teams">
-    <h2>Teams</h2>
-    <div class="teams" id="teams"></div>
-  </section>
-
   <section id="sec-standings">
     <h2>Standings</h2>
     <div class="st-wrap"><div class="panel tablewrap"><table class="st" id="standings"></table></div>
@@ -485,9 +466,9 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
 <div class="sb-overlay" id="tm" hidden role="dialog" aria-modal="true" aria-label="Team details"><div class="panel sb-panel" id="tm-body"></div></div>
 <div class="sb-overlay" id="sb" hidden role="dialog" aria-modal="true" aria-label="Match scoreboard"><div class="panel sb-panel" id="sb-body"></div></div>
 
-<script src="/eos/roles.js?v=20261111115549"></script>
-<script src="/eos/schedule.js?v=20261111115549"></script>
-<script src="/eos/data.js?v=20261111115549"></script>
-<script src="/eos/app.js?v=20261111115549"></script>
+<script src="/eos/roles.js?v=20261111115859"></script>
+<script src="/eos/schedule.js?v=20261111115859"></script>
+<script src="/eos/data.js?v=20261111115859"></script>
+<script src="/eos/app.js?v=20261111115859"></script>
 </body>
 </html>
