@@ -44,5 +44,6 @@ window.EOS_ROLES = {
   "Opa": "",
   "j0nz": "",
   "Kp0": "",
-  "epik": ""
+  "epik": "",
+  "joeski": ""
 };
