@@ -406,17 +406,6 @@
   }
 
   // ---------- teams + results ----------
-  function renderTeams() {
-    $('teams').innerHTML = teams.map(function (t) {
-      return '<div class="panel team" data-team="' + esc(t.name) + '" role="button" tabindex="0" title="Team details">' + logo(t.name) + '<div class="tn">' + esc(t.name) + '</div>' +
-        '<div class="tstats"><div><b>' + t.w + '–' + t.l + '</b><span>Maps</span></div>' +
-        '<div><b class="' + (t.rw - t.rl >= 0 ? 'pos-v' : 'neg-v') + '">' + signed(t.rw - t.rl, 0) + '</b><span>Round diff</span></div></div>' +
-        '<div class="roster">' + t.players.map(function (p) {
-          return '<a data-k="' + esc(p.name + '|' + p.team) + '"' + (p.low ? ' class="dim"' : '') + '>' + esc(p.name) + '</a>';
-        }).join('') + '</div></div>';
-    }).join('');
-  }
-
   // Map banners live in /eos/maps/<name>.webp; the colour shows if an image is missing.
   var MAP_COLORS = { ancient: '#2f5d3a', anubis: '#a0782f', cache: '#4b6b7a', dust2: '#b08850', inferno: '#8a3b2a', mirage: '#b7894b', nuke: '#3c6f8f', overpass: '#55734a', train: '#5a5f6b', vertigo: '#4a6fa0' };
   function mapBg(name) {
@@ -858,8 +847,6 @@
     if (e.key === 'Escape') { if (!$('mp').hidden) closePreview(); else if (!$('tm').hidden) closeTeam(); else if (!$('sb').hidden) closeScoreboard(); }
     var pk = e.target.closest && e.target.closest('[data-preview]');
     if (pk && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openPreview(+pk.dataset.preview); }
-    var tc = e.target.closest && e.target.closest('.team[data-team]');
-    if (tc && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openTeam(tc.dataset.team); }
     var card = e.target.closest && e.target.closest('.series[data-series]');
     if (card && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openScoreboard(card.dataset.series); }
   });
@@ -892,7 +879,7 @@
       return '<option value="' + esc(p.name + '|' + p.team) + '">' + esc(p.name) + ' (' + fx(p.rating, 2) + ')</option>';
     }).join('') + '</optgroup>';
   }).join('');
-  renderHeader(); renderStandings(); renderLeaders(); renderFilters(); renderTable(); renderTeamBars(); renderTeams(); renderResults(); renderUpcoming(); renderGlossary();
+  renderHeader(); renderStandings(); renderLeaders(); renderFilters(); renderTable(); renderTeamBars(); renderResults(); renderUpcoming(); renderGlossary();
   var fromHash = decodeURIComponent((location.hash || '').slice(1)).toLowerCase();
   var start = players.filter(function (p) { return p.name.toLowerCase() === fromHash; })[0] ||
     pool[Math.floor(Math.random() * pool.length)];
