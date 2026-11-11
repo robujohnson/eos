@@ -1,0 +1,46 @@
+name: Update FACEIT ELOs
+
+on:
+  schedule:
+    - cron: '23 4 * * *'  # Daily, 04:23 UTC
+  workflow_dispatch:      # Manual trigger (GitHub UI or API)
+
+permissions:
+  contents: write
+
+jobs:
+  update-faceit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch Finnish FACEIT ELOs
+        env:
+          FACEIT_API_KEY: ${{ secrets.FACEIT_API_KEY }}
+        run: |
+          if [ -z "$FACEIT_API_KEY" ]; then
+            echo "::warning::FACEIT_API_KEY secret is not set - skipping."
+            exit 0
+          fi
+          python scripts/fetch_faceit.py
+
+      - name: Commit and push if changed
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add faceit.js faceit-all.js 2>/dev/null || true
+          if ! git diff --staged --quiet; then
+            TS=$(date -u '+%Y%m%d%H%M%S')
+            sed -i "s|/eos/faceit\.js?v=[0-9]*|/eos/faceit.js?v=${TS}|g" faceit/index.html
+            git add faceit/index.html
+            git commit -m "🎯 Update FACEIT ELOs - $(date -u '+%Y-%m-%d %H:%M UTC')"
+            git pull --rebase -X theirs origin main
+            git push origin main
+          fi

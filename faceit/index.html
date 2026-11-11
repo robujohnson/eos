@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#182839">
+<title>FACEIT ELO Finland</title>
+<link rel="canonical" href="https://robujohnson.github.io/eos/faceit/">
+<link rel="icon" type="image/svg+xml" href="/eos/favicon.svg">
+<style>
+:root{
+  --bg:#182839; --panel:rgba(18,32,48,.7); --panel2:rgba(15,25,40,.85); --line:rgba(51,65,85,.5); --text:#f1f5f9; --muted:#94a3b8; --dim:#64748b;
+  --accent:#f97316; --accent2:#fb923c;
+  --sans:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;color:var(--text);font:14px/1.45 var(--sans);background:linear-gradient(135deg,rgb(24,40,57) 0%,rgb(34,55,77) 50%,rgb(24,40,57) 100%) fixed}
+a{color:var(--accent2)}
+.sitebar{background:rgba(24,40,57,.9);border-bottom:1px solid rgba(30,58,138,.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);position:sticky;top:0;z-index:20}
+.sitebar-in{max-width:1180px;margin:0 auto;padding:7px 16px;display:flex;align-items:center;gap:12px}
+.home{display:flex;align-items:center;gap:8px;text-decoration:none}
+.home:hover{opacity:.8}
+.sb-title{font-size:24px;font-weight:900;color:#fff;line-height:1.15}
+.sb-sub{font-size:12px;color:var(--muted);font-weight:500}
+.tabs{border-top:1px solid rgba(30,58,138,.25)}
+.tabs-in{max-width:1180px;margin:0 auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.tabs-in::-webkit-scrollbar{display:none}
+.tabs a{flex-shrink:0;border-bottom:2px solid transparent;color:var(--muted);font-size:13px;font-weight:600;padding:11px 14px 9px;white-space:nowrap;text-decoration:none}
+.tabs a:hover{color:var(--text)}
+.tabs a.on{color:#fff;border-bottom-color:var(--accent)}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 60px}
+h1{font-weight:900;font-size:30px;line-height:1.1;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.flag{border-radius:3px;box-shadow:0 0 0 1px rgba(255,255,255,.15)}
+.sub{color:var(--muted);font-size:13px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:18px 0 12px}
+.seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{background:none;border:0;color:var(--muted);font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border-radius:7px;cursor:pointer}
+.seg button.on{background:rgba(249,115,22,.18);color:#fff}
+input[type=search]{margin-left:auto;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:8px 12px;font:inherit;font-size:13px;min-width:200px}
+input[type=search]:focus{outline:none;border-color:rgba(249,115,22,.6)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:10px 12px;text-align:right;background:var(--panel2);border-bottom:1px solid var(--line)}
+td{padding:8px 12px;text-align:right;border-bottom:1px solid rgba(51,65,85,.35)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:rgba(249,115,22,.05)}
+th.l,td.l{text-align:left}
+td.rk{color:var(--dim);width:56px}
+.nick{font-weight:700;color:var(--text);text-decoration:none}
+.nick:hover{color:var(--accent2)}
+.pl{display:flex;align-items:center;gap:8px;min-width:0}
+.pl img{width:20px;height:20px;object-fit:contain;flex-shrink:0}
+.pl .t{font-size:11px;color:var(--muted)}
+.lvl{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:11px;font-weight:800;border:2px solid currentColor;background:rgba(0,0,0,.25)}
+.elo{font-weight:800;font-size:15px}
+.eos-row td{background:rgba(249,115,22,.06)}
+.tag{display:inline-block;margin-left:6px;font-size:9.5px;font-weight:800;letter-spacing:.05em;color:var(--accent2);background:rgba(249,115,22,.15);border-radius:999px;padding:1px 6px;vertical-align:1px}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.dl{width:70px;font-size:12px;font-weight:700;white-space:nowrap}
+.up{color:#4ade80} .down{color:#fb7185}
+.more{display:block;width:100%;background:var(--panel2);border:0;border-top:1px solid var(--line);color:var(--accent2);font:inherit;font-size:13px;font-weight:700;padding:12px;cursor:pointer}
+.more:hover{background:rgba(249,115,22,.08)}
+.note{font-size:11.5px;color:var(--muted);margin-top:10px;font-style:italic}
+.dim{color:var(--dim)}
+@media (max-width:560px){
+  .sb-title{font-size:20px} .sb-sub{display:none} .home img{width:34px;height:34px}
+  h1{font-size:24px}
+  input[type=search]{margin-left:0;min-width:0;width:100%}
+  th,td{padding:8px 6px}
+  .hide-sm{display:none}
+}
+</style>
+</head>
+<body>
+<div class="sitebar">
+  <div class="sitebar-in">
+    <a class="home" href="/eos/" title="EOS 14 stats home"><img src="/eos/favicon.svg" alt="EOS" width="42" height="42"><span><span class="sb-title">Elisa Open Suomi 14</span><br><span class="sb-sub">Player &amp; team stats</span></span></a>
+  </div>
+  <nav class="tabs" aria-label="Pages"><div class="tabs-in"><a href="/eos/">← EOS 14 stats</a><a href="/eos/faceit/" class="on" aria-current="page">FACEIT ELO</a></div></nav>
+</div>
+<div class="wrap">
+  <h1><svg class="flag" xmlns="http://www.w3.org/2000/svg" width="30" height="18" viewBox="0 0 18 11" aria-hidden="true"><rect width="18" height="11" fill="#fff"/><rect x="5" width="3" height="11" fill="#002f6c"/><rect y="4" width="18" height="3" fill="#002f6c"/></svg>FACEIT ELO · Finland</h1>
+  <div class="sub" id="sub"></div>
+  <div class="bar">
+    <div class="seg" role="group" aria-label="Players shown">
+      <button type="button" data-mode="all" class="on">All Finnish players</button>
+      <button type="button" data-mode="eos">EOS 14 players</button>
+    </div>
+    <input type="search" id="q" placeholder="Search player…" aria-label="Search player">
+  </div>
+  <div class="panel"><div id="list"></div></div>
+  <div class="note" id="note"></div>
+</div>
+
+<script src="/eos/faceit.js?v=20261110115800"></script>
+<script>
+(function () {
+  'use strict';
+  var F = window.EOS_FACEIT;
+  var mode = 'all', q = '', shown = 50, STEP = 50;
+  var rest = null, loading = false;   // rows 51+ come from faceit-all.js, loaded on demand
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  // FACEIT level colours
+  function lvlColor(l) { return l >= 10 ? '#fe1f00' : l >= 8 ? '#ff6309' : l >= 4 ? '#ffc800' : l >= 2 ? '#1ce400' : '#eeeeee'; }
+  function lvl(l) { return l ? '<span class="lvl" style="color:' + lvlColor(l) + '">' + l + '</span>' : '<span class="dim">–</span>'; }
+  function delta(d) {
+    if (d == null) return '<span class="dim">–</span>';
+    if (d === 0) return '<span class="dim">0</span>';
+    return '<span class="' + (d > 0 ? 'up' : 'down') + '">' + (d > 0 ? '▲ +' : '▼ ') + d + '</span>';
+  }
+  function prof(nick) { return 'https://www.faceit.com/en/players/' + encodeURIComponent(nick); }
+  // Team logos, with the same coloured "BO"-style shield the stats site uses for teams without one
+  var TEAM_COLORS = ['#38bdf8', '#f472b6', '#a3e635', '#fb923c', '#c084fc', '#facc15', '#2dd4bf', '#f87171', '#60a5fa', '#e879f9'];
+  var logos = (F && F.logos) || {};
+  function initials(t) { var w = String(t).replace(/\.[a-z]+$/i, '').split(/[\s_-]+/).filter(Boolean); return (w.length > 1 ? w[0][0] + w[1][0] : w[0].slice(0, 2)).toUpperCase(); }
+  function shield(t) {
+    var i = Object.keys(logos).indexOf(t), c = i >= 0 ? TEAM_COLORS[i % TEAM_COLORS.length] : '#94a3b8';
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + c + '"/><stop offset="1" stop-color="#1e293b"/></linearGradient></defs>' +
+      '<path d="M32 3 L57 11 V30 C57 45 46 56 32 61 C18 56 7 45 7 30 V11 Z" fill="url(#g)" stroke="rgba(255,255,255,.35)" stroke-width="2"/>' +
+      '<text x="32" y="38" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="19" fill="#fff">' + esc(initials(t)) + '</text></svg>';
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+  function teamLogo(t) { var s = logos[t]; return '<img src="' + (s ? '/eos/logos/' + esc(s) + '.png' : shield(t)) + '" alt="" loading="lazy">'; }
+
+  if (!F) { $('list').innerHTML = '<div class="empty">FACEIT data hasn\u2019t been fetched yet. It updates once a day.</div>'; return; }
+  $('sub').textContent = 'FACEIT CS2 ELO of Finnish players · updated ' + F.updated;
+  var eosIds = {};
+  (F.league || []).forEach(function (p) { if (p.id) eosIds[p.id] = p; });
+  var total = F.total || (F.top || []).length;
+
+  function loadRest(cb) {
+    if (rest) return cb();
+    if (loading) return;
+    loading = true;
+    var sc = document.createElement('script');
+    sc.src = '/eos/faceit-all.js?v=' + encodeURIComponent(F.v || F.updated);
+    sc.onload = function () { rest = window.EOS_FACEIT_REST || []; loading = false; cb(); };
+    sc.onerror = function () { loading = false; rest = []; cb(); };
+    document.head.appendChild(sc);
+  }
+  function allRows() { return (F.top || []).concat(rest || []); }
+
+  function render() {
+    var html, needle = q.toLowerCase(), note = '';
+    if (mode === 'all') {
+      if (needle && !rest) { loadRest(render); }
+      var rows = allRows().filter(function (p) { return !needle || String(p.nick).toLowerCase().indexOf(needle) >= 0; });
+      var vis = needle ? rows : rows.slice(0, shown);
+      html = vis.length ? '<table><thead><tr><th class="l">#</th><th class="l">Player</th><th>Level</th><th>ELO</th><th title="Change since the previous daily check">+/-</th></tr></thead><tbody>' +
+        vis.map(function (p) {
+          var e = eosIds[p.id];
+          return '<tr' + (e ? ' class="eos-row"' : '') + '><td class="l rk">' + p.pos + '</td><td class="l"><a class="nick" href="' + prof(p.nick) + '" target="_blank" rel="noopener">' + esc(p.nick) + '</a>' +
+            (e ? '<span class="tag" title="' + esc(e.player + ' · ' + e.team) + '">EOS · ' + esc(e.team) + '</span>' : '') + '</td><td>' + lvl(p.lvl) + '</td><td class="elo">' + (p.elo || '–') + '</td><td class="dl">' + delta(p.d) + '</td></tr>';
+        }).join('') + '</tbody></table>' : '<div class="empty">' + (needle && loading ? 'Searching…' : 'No players match.') + '</div>';
+      if (!needle && shown < total) {
+        html += '<button type="button" class="more" id="more">' + (loading ? 'Loading…' : 'Show 50 more') + ' <span class="dim">(' + Math.min(shown, total) + ' of ' + total + ')</span></button>';
+      }
+      note = 'Top ' + total + ' Finnish players in the FACEIT CS2 EU ranking. EOS 14 players are highlighted.';
+    } else {
+      var list = (F.league || []).filter(function (p) {
+        return !needle || [p.player, p.nick, p.team].join(' ').toLowerCase().indexOf(needle) >= 0;
+      }).sort(function (a, b) { return (b.elo || -1) - (a.elo || -1); });
+      html = list.length ? '<table><thead><tr><th class="l">#</th><th class="l">Player</th><th class="l hide-sm">FACEIT</th><th class="hide-sm">FI rank</th><th>Level</th><th>ELO</th><th title="Change since the previous daily check">+/-</th></tr></thead><tbody>' +
+        list.map(function (p, i) {
+          return '<tr><td class="l rk">' + (p.elo ? i + 1 : '') + '</td><td class="l"><span class="pl">' + teamLogo(p.team) + '<span><b>' + esc(p.player) + '</b><br><span class="t">' + esc(p.team) + '</span></span></span></td>' +
+            '<td class="l hide-sm">' + (p.nick ? '<a class="nick" href="' + prof(p.nick) + '" target="_blank" rel="noopener">' + esc(p.nick) + '</a>' : '<span class="dim">not found</span>') + '</td>' +
+            '<td class="hide-sm">' + (p.pos ? '#' + p.pos : '<span class="dim">–</span>') + '</td><td>' + lvl(p.lvl) + '</td><td class="elo">' + (p.elo || '<span class="dim">–</span>') + '</td><td class="dl">' + delta(p.d) + '</td></tr>';
+        }).join('') + '</tbody></table>' : '<div class="empty">No players match.</div>';
+      var missing = (F.league || []).filter(function (p) { return !p.nick; }).length;
+      note = 'EOS 14 players by FACEIT ELO. FI rank = position among Finnish players in the FACEIT EU ranking.' + (missing ? ' ' + missing + ' player(s) couldn\u2019t be matched to a FACEIT account yet.' : '');
+    }
+    note += F.since ? ' +/- = change since the previous check (' + F.since + ').' : ' +/- (ELO change) appears from the next daily update.';
+    $('list').innerHTML = html;
+    $('note').textContent = note;
+  }
+  document.querySelector('.seg').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    mode = b.dataset.mode;
+    [].forEach.call(document.querySelectorAll('.seg button'), function (x) { x.classList.toggle('on', x === b); });
+    render();
+  });
+  $('list').addEventListener('click', function (e) {
+    if (!e.target.closest('#more')) return;
+    var grow = function () { shown += STEP; render(); };
+    if (shown + STEP > (F.top || []).length && !rest) { loadRest(grow); render(); } else grow();
+  });
+  $('q').addEventListener('input', function (e) { q = e.target.value.trim(); render(); });
+  if (/[?&]eos=1\b/.test(location.search)) document.querySelector('.seg button[data-mode="eos"]').click(); else render();
+})();
+</script>
+</body>
+</html>
