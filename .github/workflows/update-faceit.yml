@@ -2,7 +2,7 @@ name: Update FACEIT ELOs
 
 on:
   schedule:
-    - cron: '23 4 * * *'  # Daily, 04:23 UTC
+    - cron: '23 4 * * *'  # Daily, 04:23 UTC (06:23 Finnish time in winter, 07:23 in summer)
   workflow_dispatch:      # Manual trigger (GitHub UI or API)
 
 permissions:
