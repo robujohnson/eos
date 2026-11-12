@@ -231,7 +231,7 @@ def main():
         stamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
         with open(page, encoding='utf-8') as f:
             html = f.read()
-        html = re.sub(r'((?:data|app|roles|schedule)\.js\?v=)\d+', r'\g<1>' + stamp, html)
+        html = re.sub(r'((?:data|app|roles|schedule|extra-results)\.js\?v=)\d+', r'\g<1>' + stamp, html)
         with open(page, 'w', encoding='utf-8') as f:
             f.write(html)
     fpage = os.path.join(os.path.dirname(OUT), 'faceit', 'index.html')

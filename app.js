@@ -114,7 +114,23 @@
       date: dt ? dt[1] : '', time: dt ? dt[1] + ' ' + dt[2] + ':' + dt[3] : '',
       series: series ? series[1] : id
     };
-  }).sort(function (x, y) { return x.time < y.time ? -1 : x.time > y.time ? 1 : 0; });
+  });
+  // Matches without demos (extra-results.js): count for results/standings, not player stats.
+  var extraBox = {};
+  (window.EOS_EXTRA_RESULTS || []).forEach(function (x, si) {
+    var sid = 'extra-' + si + '-' + x.date + '-' + x.a + '-' + x.b;
+    (x.maps || []).forEach(function (mm, mi) {
+      var id = sid + '-' + mi;
+      maps.push({ id: id, map: mm.map, rounds: mm.as + mm.bs, a: x.a, as: mm.as, b: x.b, bs: mm.bs,
+        date: x.date, time: x.date + ' ' + (x.time || '00:00') + ':' + mi, series: sid, noDemo: true, note: x.note, boxNote: mm.boxNote, ot: mm.ot });
+      var rows = [];
+      Object.keys(mm.box || {}).forEach(function (team) {
+        mm.box[team].forEach(function (r) { rows.push({ Player: r[0], Team: team, K: r[1], D: r[2], ADR: r[3], Rounds: mm.as + mm.bs, KAST: null, 'EOS Rating': null }); });
+      });
+      extraBox[id] = rows;
+    });
+  });
+  maps.sort(function (x, y) { return x.time < y.time ? -1 : x.time > y.time ? 1 : 0; });
   var mapById = {}; maps.forEach(function (m) { mapById[m.id] = m; });
 
 
@@ -418,6 +434,7 @@
   // ---------- per-map player rows (for scoreboards) ----------
   var mapPlayers = {};
   rows(D.perMap).forEach(function (r) { (mapPlayers[r.Match] = mapPlayers[r.Match] || []).push(r); });
+  Object.keys(extraBox).forEach(function (id) { mapPlayers[id] = extraBox[id]; });
   var seriesById = {};
 
   function wbr(name) { return esc(name).replace(/\./g, '.<wbr>'); }
@@ -436,7 +453,7 @@
         aS > bS ? wa++ : wb++;
       });
       s.A = A; s.B = B; s.wa = wa; s.wb = wb; seriesById[s.id] = s;
-      return '<div class="panel series" role="button" tabindex="0" data-series="' + esc(s.id) + '" title="Open scoreboard"><div class="sdate">' + esc(s.date) + '</div><div class="shead">' +
+      return '<div class="panel series" role="button" tabindex="0" data-series="' + esc(s.id) + '" title="Open scoreboard"><div class="sdate">' + esc(s.date) + (s.maps[0].noDemo ? ' · <span class="nd" title="No demo: box score only, not in player stats">no demo</span>' : '') + '</div><div class="shead">' +
         '<span class="steam r ' + (wa > wb ? 'win' : 'loss') + '"><span>' + wbr(A) + '</span>' + logo(A) + '</span>' +
         '<span class="sscore">' + wa + ' : ' + wb + '</span>' +
         '<span class="steam ' + (wb > wa ? 'win' : 'loss') + '">' + logo(B) + '<span>' + wbr(B) + '</span></span></div>' +
@@ -454,18 +471,22 @@
     var by = {};
     list.forEach(function (r) {
       var k = r.Player + '|' + r.Team, o = by[k];
-      if (!o) o = by[k] = { Player: r.Player, Team: r.Team, K: 0, D: 0, rounds: 0, adr: 0, kast: 0, eos: 0 };
+      if (!o) o = by[k] = { Player: r.Player, Team: r.Team, K: 0, D: 0, adr: [0, 0], kast: [0, 0], eos: [0, 0] };
       var rd = r.Rounds || 0;
-      o.K += r.K || 0; o.D += r.D || 0; o.rounds += rd;
-      o.adr += (num(r.ADR) || 0) * rd; o.kast += (num(r.KAST) || 0) * rd; o.eos += (num(r['EOS Rating']) || 0) * rd;
+      o.K += r.K || 0; o.D += r.D || 0;
+      [['adr', num(r.ADR)], ['kast', num(r.KAST)], ['eos', num(r['EOS Rating'])]].forEach(function (f) {
+        if (f[1] != null) { o[f[0]][0] += f[1] * rd; o[f[0]][1] += rd; }
+        else if (f[0] === 'adr' && r.Rounds) o.adr.miss = true;   // a map's ADR unknown -> series ADR unknown
+      });
     });
+    function avg(a) { return a[1] ? a[0] / a[1] : null; }
     return Object.keys(by).map(function (k) {
-      var o = by[k], n = o.rounds || 1;
-      return { Player: o.Player, Team: o.Team, K: o.K, D: o.D, ADR: o.adr / n, KAST: o.kast / n, EOS: o.eos / n };
+      var o = by[k];
+      return { Player: o.Player, Team: o.Team, K: o.K, D: o.D, ADR: o.adr.miss ? null : avg(o.adr), KAST: avg(o.kast), EOS: avg(o.eos) };
     });
   }
   function teamTable(team, score, list, won) {
-    list = list.filter(function (r) { return r.Team === team; }).sort(function (a, b) { return b.EOS - a.EOS; });
+    list = list.filter(function (r) { return r.Team === team; }).sort(function (a, b) { return ((b.EOS || 0) - (a.EOS || 0)) || ((b.K - b.D) - (a.K - a.D)); });
     return '<div class="sbt"><div class="sbt-head ' + (won ? 'win' : 'loss') + '">' + logo(team) + '<span class="sbt-name">' + esc(team) + '</span><span class="sbt-score">' + score + '</span></div>' +
       '<table class="sb"><thead><tr><th>Player</th><th>K</th><th>D</th><th>+/-</th><th>ADR</th><th>KAST</th><th>EOS</th></tr></thead><tbody>' +
       list.map(function (r) {
@@ -496,7 +517,8 @@
       '<span class="steam ' + (s.wb > s.wa ? 'win' : 'loss') + '">' + logo(B) + '<span>' + esc(B) + '</span></span></div>' +
       '<div class="sb-tabs">' + tabs + '</div><div class="sc-title">' + esc(title) + '</div>' +
       teamTable(A, sa, list, sa > sb) + teamTable(B, sb, list, sb > sa) +
-      (sbTab === 'all' ? '<div class="foot">Series ADR, KAST and EOS Rating are averages weighted by rounds played.</div>' : '');
+      (s.maps[0].noDemo ? '<div class="foot nodemo">' + esc(s.maps[0].note || 'No demo for this match.') + (sbTab !== 'all' ? ' ' + esc((s.maps.filter(function (x) { return x.id === sbTab; })[0] || {}).boxNote || '') : '') + ' Not included in player season stats.</div>'
+        : sbTab === 'all' ? '<div class="foot">Series ADR, KAST and EOS Rating are averages weighted by rounds played.</div>' : '');
   }
   function openScoreboard(id, mapId) {
     sbSeries = seriesById[id]; if (!sbSeries) return;
