@@ -93,6 +93,7 @@
       : p.openRate > 0.22 ? 'Spacetaker' : p.openRate < 0.15 ? 'Lurker' : 'Pack rifler';
     var base = ROLES[p.name] || auto;
     p.igl = IGLS.indexOf(String(p.name).toLowerCase()) >= 0;
+    p.baseRole = base;
     p.role = p.igl ? 'IGL · ' + base : base;
   });
 
@@ -292,17 +293,25 @@
     { k: 'kd', lab: 'K-D', get: function (p) { return p.pm; } },
     { k: 'adr', lab: 'ADR', get: function (p) { return p.adr; } }
   ];
-  var sortKey = 'rating', sortAsc = false, teamFilter = {}, showLow = true; // teamFilter: selected team names; empty = all
+  var sortKey = 'rating', sortAsc = false, teamFilter = {}, roleFilter = {}, showLow = true;
+  // Role filter: IGL = in the IGL list; AWPer = the team's AWPer; Rifler = everyone who isn't the AWPer.
+  var ROLE_FILTERS = [['IGL', function (p) { return p.igl; }], ['AWPer', function (p) { return p.baseRole === 'AWPer'; }], ['Rifler', function (p) { return p.baseRole !== 'AWPer'; }]];
+  function roleMatch(p) {
+    var on = ROLE_FILTERS.filter(function (r) { return roleFilter[r[0]]; });
+    return !on.length || on.some(function (r) { return r[1](p); });
+  } // teamFilter: selected team names; empty = all
 
   function renderFilters() {
     $('filters').innerHTML = '<button class="fbtn all' + (Object.keys(teamFilter).length ? '' : ' on') + '" data-t="" aria-pressed="' + !Object.keys(teamFilter).length + '">All teams</button>' +
       teams.map(function (t) { return '<button class="fbtn' + (teamFilter[t.name] ? ' on' : '') + '" data-t="' + esc(t.name) + '" aria-pressed="' + !!teamFilter[t.name] + '">' + logo(t.name) + esc(t.name) + '</button>'; }).join('') +
-      '<label class="toggle"><input type="checkbox" id="showlow"' + (showLow ? ' checked' : '') + '> Show players under ' + MIN + ' rounds</label>';
+      '<label class="toggle"><input type="checkbox" id="showlow"' + (showLow ? ' checked' : '') + '> Show players under ' + MIN + ' rounds</label>' +
+      '<div class="frow"><button class="fbtn all' + (Object.keys(roleFilter).length ? '' : ' on') + '" data-r="" aria-pressed="' + !Object.keys(roleFilter).length + '">All roles</button>' +
+      ROLE_FILTERS.map(function (r) { return '<button class="fbtn role' + (roleFilter[r[0]] ? ' on' : '') + '" data-r="' + r[0] + '" aria-pressed="' + !!roleFilter[r[0]] + '">' + r[0] + '</button>'; }).join('') + '</div>';
   }
 
   function renderTable() {
     var col = COLS.filter(function (c) { return c.k === sortKey; })[0];
-    var list = players.filter(function (p) { return (!Object.keys(teamFilter).length || teamFilter[p.team]) && (showLow || !p.low); });
+    var list = players.filter(function (p) { return (!Object.keys(teamFilter).length || teamFilter[p.team]) && roleMatch(p) && (showLow || !p.low); });
     list.sort(function (a, b) {
       var x = col.get(a), y = col.get(b);
       if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
@@ -855,6 +864,13 @@
       renderLeaders(); return;
     }
     var fb = e.target.closest('.fbtn');
+    if (fb && fb.hasAttribute('data-r')) {
+      var rn = fb.dataset.r;
+      if (!rn) roleFilter = {};
+      else if (roleFilter[rn]) delete roleFilter[rn];
+      else roleFilter[rn] = true;
+      renderFilters(); renderTable(); return;
+    }
     if (fb) {
       var tn = fb.dataset.t;
       if (!tn) teamFilter = {};
