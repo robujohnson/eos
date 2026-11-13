@@ -149,7 +149,7 @@ td.rk{color:var(--dim);width:56px}
       if (needle && !rest) { loadRest(render); }
       var rows = allRows().filter(function (p) { return !needle || String(p.nick).toLowerCase().indexOf(needle) >= 0; });
       var vis = needle ? rows : rows.slice(0, shown);
-      html = vis.length ? '<table><thead><tr><th class="l">#</th><th class="l">Player</th><th>Level</th><th>ELO</th><th title="Change since the previous daily check">+/-</th></tr></thead><tbody>' +
+      html = vis.length ? '<table><thead><tr><th class="l">#</th><th class="l">Player</th><th>Level</th><th>ELO</th><th title="ELO change since yesterday">+/-</th></tr></thead><tbody>' +
         vis.map(function (p) {
           var e = eosIds[p.id];
           return '<tr' + (e ? ' class="eos-row"' : '') + '><td class="l rk">' + p.pos + '</td><td class="l"><a class="nick" href="' + prof(p.nick) + '" target="_blank" rel="noopener">' + esc(p.nick) + '</a>' +
@@ -163,7 +163,7 @@ td.rk{color:var(--dim);width:56px}
       var list = (F.league || []).filter(function (p) {
         return !needle || [p.player, p.nick, p.team].join(' ').toLowerCase().indexOf(needle) >= 0;
       }).sort(function (a, b) { return (b.elo || -1) - (a.elo || -1); });
-      html = list.length ? '<table><thead><tr><th class="l">#</th><th class="l">Player</th><th class="l hide-sm">FACEIT</th><th class="hide-sm">FI rank</th><th>Level</th><th>ELO</th><th title="Change since the previous daily check">+/-</th></tr></thead><tbody>' +
+      html = list.length ? '<table><thead><tr><th class="l">#</th><th class="l">Player</th><th class="l hide-sm">FACEIT</th><th class="hide-sm">FI rank</th><th>Level</th><th>ELO</th><th title="ELO change since yesterday">+/-</th></tr></thead><tbody>' +
         list.map(function (p, i) {
           return '<tr><td class="l rk">' + (p.elo ? i + 1 : '') + '</td><td class="l"><span class="pl">' + teamLogo(p.team) + '<span><b>' + esc(p.player) + '</b><br><span class="t">' + esc(p.team) + '</span></span></span></td>' +
             '<td class="l hide-sm">' + (p.nick ? '<a class="nick" href="' + prof(p.nick) + '" target="_blank" rel="noopener">' + esc(p.nick) + '</a>' : '<span class="dim">not found</span>') + '</td>' +
@@ -172,7 +172,7 @@ td.rk{color:var(--dim);width:56px}
       var missing = (F.league || []).filter(function (p) { return !p.nick; }).length;
       note = 'EOS 14 players by FACEIT ELO. FI rank = position among Finnish players in the FACEIT EU ranking.' + (missing ? ' ' + missing + ' player(s) couldn\u2019t be matched to a FACEIT account yet.' : '');
     }
-    note += F.since ? ' +/- = change since the previous check (' + F.since + ').' : ' +/- (ELO change) appears from the next daily update.';
+    note += F.since ? ' +/- = ELO change since yesterday\u2019s last check (' + F.since + ').' : ' +/- (ELO change) appears from the next update.';
     $('list').innerHTML = html;
     $('note').textContent = note;
   }
