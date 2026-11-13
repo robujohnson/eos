@@ -20,6 +20,7 @@ import re
 import sys
 import time
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from urllib.error import HTTPError
 from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
@@ -30,6 +31,9 @@ NAMES = os.path.join(ROOT, 'faceit-names.js')
 OUT = os.path.join(ROOT, 'faceit.js')            # top FIRST_N + EOS players + meta (loaded with the page)
 OUT_REST = os.path.join(ROOT, 'faceit-all.js')    # rest of the Finnish ranking (loaded on 'Show more' / search)
 FIRST_N = 50
+# ELOs at the end of the previous day (Finnish time). The +/- column compares with this,
+# so it means 'change since yesterday' no matter how many times a day the job runs.
+BASE = os.path.join(ROOT, 'faceit-base.json')
 API = os.environ.get('FACEIT_API_BASE', 'https://open.faceit.com/data/v4').rstrip('/')
 KEY = os.environ.get('FACEIT_API_KEY', '')
 TOP_N = 1000
@@ -152,16 +156,28 @@ def main():
             'pos': pos, 'country': country, 'id': pid,
         })
 
-    # ELO change since the previous check
+    # ELO change since yesterday: on the first run of a new (Finnish) day, the last saved
+    # values become the baseline; later runs that day keep comparing with it.
+    today = datetime.now(ZoneInfo('Europe/Helsinki')).date().isoformat()
+    try:
+        with open(BASE, encoding='utf-8') as f:
+            base = json.load(f)
+    except (OSError, ValueError):
+        base = {}
+    if base.get('date') != today:
+        base = {'date': today, 'since': prev_when, 'elos': prev}
+        with open(BASE, 'w', encoding='utf-8') as f:
+            json.dump(base, f, separators=(',', ':'))
+    base_elos = base.get('elos') or {}
     for p in top + league:
-        if p.get('id') in prev and p.get('elo') is not None:
-            p['d'] = p['elo'] - prev[p['id']]
+        if p.get('id') in base_elos and p.get('elo') is not None:
+            p['d'] = p['elo'] - base_elos[p['id']]
 
     now = datetime.now(timezone.utc)
     out = {
         'updated': now.strftime('%Y-%m-%d %H:%M UTC'),
         'v': now.strftime('%Y%m%d%H%M%S'),
-        'since': prev_when,
+        'since': base.get('since'),
         'total': len(top),
         'logos': logos,
         'top': top[:FIRST_N],
