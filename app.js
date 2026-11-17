@@ -101,6 +101,66 @@
   if (pool.length < 5) pool = players;
   var byKey = {}; players.forEach(function (p) { byKey[p.name + '|' + p.team] = p; });
 
+  // ---------- raw aim ----------
+  // Mechanics only, in the style of 'raw aim' charts: three parts, each in standard deviations
+  // ('steps') from the average of players with MIN+ rounds; Raw aim = 1.00 + 0.10 per step.
+  //   Placement = crosshair placement (lower degrees = better)
+  //   Precision = head accuracy, spray accuracy, accuracy with an enemy in sight
+  //   Strafing  = counter-strafing
+  var AIM_PARTS = [
+    ['Placement', [['Aim|Crosshair placement (\u00b0)', -1]]],
+    ['Precision', [['Aim|Head accuracy', 1], ['Aim|Spray accuracy', 1], ['Aim|Accuracy (enemy spotted)', 1]]],
+    ['Strafing', [['Aim|Counter-strafing', 1]]]
+  ];
+  (function () {
+    function stats(vals) {
+      vals = vals.filter(function (v) { return v != null; });
+      if (vals.length < 3) return null;
+      var m = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+      var sd = Math.sqrt(vals.reduce(function (a, b) { return a + (b - m) * (b - m); }, 0) / (vals.length - 1));
+      return sd > 0 ? { m: m, sd: sd } : null;
+    }
+    var colStats = {};
+    AIM_PARTS.forEach(function (part) {
+      part[1].forEach(function (c) { colStats[c[0]] = stats(pool.map(function (p) { return num(p.adv[c[0]]); })); });
+    });
+    players.forEach(function (p) {
+      p.aimParts = AIM_PARTS.map(function (part) {
+        var zs = part[1].map(function (c) {
+          var v = num(p.adv[c[0]]), st = colStats[c[0]];
+          return v == null || !st ? null : c[1] * (v - st.m) / st.sd;
+        }).filter(function (z) { return z != null; });
+        return zs.length ? zs.reduce(function (a, b) { return a + b; }, 0) / zs.length : null;
+      });
+    });
+    // parts -> re-standardised so each step of the total is one standard deviation
+    var parts = AIM_PARTS.map(function (_, i) { return stats(pool.map(function (p) { return p.aimParts[i]; })); });
+    players.forEach(function (p) {
+      p.aimParts = p.aimParts.map(function (z, i) { return z == null || !parts[i] ? null : (z - parts[i].m) / parts[i].sd; });
+      var have = p.aimParts.filter(function (z) { return z != null; });
+      p.aimRaw0 = have.length === AIM_PARTS.length ? have.reduce(function (a, b) { return a + b; }, 0) / have.length : null;
+    });
+    var tot = stats(pool.map(function (p) { return p.aimRaw0; }));
+    players.forEach(function (p) { p.rawAim = p.aimRaw0 == null || !tot ? null : 1 + 0.1 * (p.aimRaw0 - tot.m) / tot.sd; });
+    // rank of each part among the pool
+    AIM_PARTS.forEach(function (_, i) {
+      var vals = pool.map(function (p) { return p.aimParts[i]; }).filter(function (v) { return v != null; });
+      players.forEach(function (p) {
+        var z = p.aimParts[i];
+        p.aimRanks = p.aimRanks || [];
+        p.aimRanks[i] = z == null ? null : 1 + vals.filter(function (v) { return v > z; }).length;
+      });
+    });
+  })();
+  function aimTip(p) {
+    if (p.rawAim == null) return 'No aim data';
+    return '<b>' + p.rawAim.toFixed(2) + '</b> raw aim <span class=\'dim\'>(1.00 = league average, 0.10 = one step)</span>' +
+      AIM_PARTS.map(function (part, i) {
+        var z = p.aimParts[i];
+        return '<br>' + part[0] + ': ' + (z == null ? '–' : (z >= 0 ? '+' : '') + z.toFixed(2) + (p.aimRanks[i] && !p.low ? ' (#' + p.aimRanks[i] + ')' : ''));
+      }).join('');
+  }
+
   // Map-level results
   var matchRows = rows(D.matches);
   var RES_RE = /^(.+?)\s+(\d+)\s*[–—-]\s*(.+?)\s+(\d+)$/;
@@ -181,7 +241,7 @@
     { lab: 'Clutching', get: function (p) { return p.clutchSwing; }, fmt: function (v, p) { return (p.clutches != null ? p.clutches : 0) + '/' + (p.clutchAtt != null ? p.clutchAtt : '–') + ' won'; } },
     { lab: 'Multi-kills', get: function (p) { return p.mkRate; }, fmt: function (v) { return pctS(v, 0) + ' of rds'; } },
     { lab: 'Utility dmg', get: function (p) { return p.utilDmg; }, fmt: function (v) { return fx(v, 1) + ' /rd'; } },
-    { lab: 'Aim accuracy', get: function (p) { return p.acc; }, fmt: function (v, p) { return pctS(v, 0) + (p.headAcc != null ? ' · ' + pctS(p.headAcc, 0) + ' head' : ''); } }
+    { lab: 'Raw aim', get: function (p) { return p.rawAim; }, fmt: function (v, p) { return aimTip(p); }, html: true }
   ];
 
   // ---------- SVG pieces ----------
@@ -222,7 +282,7 @@
     var rk = rankOf(p);
     var tiles = TILES.map(function (t) {
       var v = t.get(p), pc = percentile(t.get, v);
-      var tip = '<b>' + esc(t.lab) + '</b><br>' + (v == null ? 'No data' : t.fmt(v, p)) + (pc == null ? '' : '<br><span class=\'dim\'>' + pc + 'th percentile among ' + MIN + '+ round players</span>');
+      var tip = '<b>' + esc(t.lab) + '</b><br>' + (v == null ? 'No data' : t.fmt(v, p)) + (pc == null ? '' : '<br><span class=\'dim\'>' + ordinal(pc) + ' percentile among ' + MIN + '+ round players</span>');
       return '<div class="tile" data-tip="' + esc(tip) + '"><div class="lab">' + esc(t.lab) + '</div><div class="box" style="background:' + pctColor(pc) + '">' +
         '<div class="pct">' + (pc == null ? 'NA' : pc + '%') + '</div></div></div>';
     }).join('');
