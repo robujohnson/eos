@@ -186,6 +186,13 @@ def main():
     pm_h, pm_rows, _ = read_table(wb['Per map'])
     m_h, m_rows, _ = read_table(wb['Matches'])
     pos_h, pos_rows, _ = read_table(wb['Positions']) if 'Positions' in wb.sheetnames else ([], [], [])
+    # Weapons sheet (per player per weapon duels); only the columns the site uses, to keep data.js small
+    wpn = {'h': [], 'rows': []}
+    if 'Weapons' in wb.sheetnames:
+        w_h, w_rows, _ = read_table(wb['Weapons'])
+        keep = [c for c in ('Player', 'Team', 'Weapon', 'Class', 'Duels', 'Won', 'Expected win%', 'Kills', 'HS%') if c in w_h]
+        idx = [w_h.index(c) for c in keep]
+        wpn = {'h': keep, 'rows': [[r[i] for i in idx] for r in w_rows]}
 
     glossary = []
     if 'Glossary' in wb.sheetnames:
@@ -215,6 +222,7 @@ def main():
         'perMap': {'h': pm_h, 'rows': pm_rows},
         'matches': {'h': m_h, 'rows': m_rows},
         'positions': {'h': pos_h, 'rows': pos_rows},
+        'weapons': wpn,
         'glossary': glossary,
     }
     os.makedirs(os.path.dirname(OUT), exist_ok=True)

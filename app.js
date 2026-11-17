@@ -152,6 +152,57 @@
       });
     });
   })();
+  // ---------- gun ratings (Weapons sheet) ----------
+  // Duels are counted for the gun each player held when the duel started, so losses count too.
+  // Gun rating = (duels won + K) / (duels expected to be won + K): 1.00 = won exactly as many
+  // fights as the situations predicted, 1.20 = 20 % more. K pulls small samples toward 1.00.
+  var GUN_K = 5, GUN_MIN = 10;
+  var WNAME = { ak47: 'AK-47', m4a1: 'M4A4', m4a1_silencer: 'M4A1-S', galilar: 'Galil AR', famas: 'FAMAS', aug: 'AUG', sg556: 'SG 553',
+    awp: 'AWP', ssg08: 'SSG 08', glock: 'Glock-18', usp_silencer: 'USP-S', hkp2000: 'P2000', deagle: 'Desert Eagle', tec9: 'Tec-9',
+    fiveseven: 'Five-SeveN', p250: 'P250', elite: 'Dual Berettas', cz75a: 'CZ75-Auto', revolver: 'R8', mp9: 'MP9', mac10: 'MAC-10',
+    mp7: 'MP7', ump45: 'UMP-45', p90: 'P90', bizon: 'PP-Bizon', mp5sd: 'MP5-SD' };
+  function wname(w) { return WNAME[w] || w; }
+  var GUN_GROUPS = [
+    { k: 'g:rifles', lab: 'Rifles', short: 'Rifles', ws: ['ak47', 'm4a1', 'm4a1_silencer', 'galilar', 'famas', 'aug', 'sg556'] },
+    { k: 'g:awp', lab: 'AWP', short: 'AWP', ws: ['awp'] },
+    { k: 'g:pistols', lab: 'Glock / USP-S / P2000', short: 'Glock/USP', ws: ['glock', 'usp_silencer', 'hkp2000'] },
+    { k: 'g:otherpistols', lab: 'Other pistols (Deagle, Tec-9, Five-SeveN\u2026)', short: 'Deagle+', ws: ['deagle', 'tec9', 'fiveseven', 'p250', 'elite', 'cz75a', 'revolver'] },
+    { k: 'g:smg', lab: 'SMGs', short: 'SMGs', ws: ['mp9', 'mac10', 'mp7', 'ump45', 'p90', 'bizon', 'mp5sd'] }
+  ];
+  var gunData = {}, gunTotals = {};
+  rows(D.weapons).forEach(function (r) {
+    var k = r.Player + '|' + r.Team, n = r.Duels || 0;
+    (gunData[k] = gunData[k] || {})[r.Weapon] = { duels: n, won: r.Won || 0, exp: (num(r['Expected win%']) || 0) * n,
+      kills: r.Kills || 0, hs: (num(r['HS%']) || 0) * (r.Kills || 0) };
+    gunTotals[r.Weapon] = (gunTotals[r.Weapon] || 0) + n;
+  });
+  var HAS_GUNS = Object.keys(gunData).length > 0;
+  // single guns worth a leaderboard of their own (100+ duels in the league)
+  var GUN_SINGLES = Object.keys(gunTotals).filter(function (w) { return gunTotals[w] >= 100; })
+    .sort(function (a, b) { return gunTotals[b] - gunTotals[a]; });
+  function gunWeapons(key) {
+    if (key.indexOf('g:') === 0) return GUN_GROUPS.filter(function (g) { return g.k === key; })[0].ws;
+    return [key];
+  }
+  function gunLabel(key) { var g = GUN_GROUPS.filter(function (x) { return x.k === key; })[0]; return g ? g.lab : wname(key); }
+  function gunStat(p, key) {
+    var m = gunData[p.name + '|' + p.team] || {}, o = { duels: 0, won: 0, exp: 0, kills: 0, hs: 0 };
+    gunWeapons(key).forEach(function (w) { var x = m[w]; if (x) { o.duels += x.duels; o.won += x.won; o.exp += x.exp; o.kills += x.kills; o.hs += x.hs; } });
+    if (!o.duels) return null;
+    o.rating = (o.won + GUN_K) / (o.exp + GUN_K);
+    o.winPct = o.won / o.duels; o.expPct = o.exp / o.duels;
+    o.hsPct = o.kills ? o.hs / o.kills : null;
+    return o;
+  }
+  function gunColor(r, low) { return low ? '#475569' : r >= 1.05 ? '#22c55e' : r >= 0.95 ? '#f59e0b' : '#f43f5e'; }
+  function gunTip(key, o) {
+    if (!o) return '<b>' + esc(gunLabel(key)) + '</b><br>No duels';
+    return '<b>' + esc(gunLabel(key)) + '</b><br>Gun rating <b>' + o.rating.toFixed(2) + '</b> <span class=\'dim\'>(1.00 = won as many duels as expected)</span>' +
+      '<br>' + o.duels + ' duels · ' + o.won + '-' + (o.duels - o.won) + ' · ' + pctS(o.winPct, 0) + ' won vs ' + pctS(o.expPct, 0) + ' expected' +
+      '<br>' + o.kills + ' kills' + (o.hsPct != null ? ' · ' + pctS(o.hsPct, 0) + ' HS' : '') +
+      (o.duels < GUN_MIN ? '<br><span class=\'dim\'>Few duels \u2013 read with care</span>' : '');
+  }
+
   function aimTip(p) {
     if (p.rawAim == null) return 'No aim data';
     return '<b>' + p.rawAim.toFixed(2) + '</b> raw aim <span class=\'dim\'>(1.00 = league average, 0.10 = one step)</span>' +
@@ -307,6 +358,11 @@
       '</div>' +
       '<div class="card-right">' +
         '<div class="tiles">' + tiles + '</div>' +
+        (HAS_GUNS ? '<div class="guns"><span class="guns-l" title="Gun rating: duels won vs expected with each gun (1.00 = as expected)">Guns <span>· duels won vs expected (1.00 = as expected)</span></span>' + GUN_GROUPS.map(function (g) {
+          var o = gunStat(p, g.k), low = !o || o.duels < GUN_MIN;
+          return '<span class="gun' + (low ? ' low' : '') + '" data-tip="' + esc(gunTip(g.k, o)) + '"><span class="gl">' + esc(g.short) + '</span>' +
+            '<b style="color:' + (o ? gunColor(o.rating, low) : '#64748b') + '">' + (o ? o.rating.toFixed(2) : '–') + '</b><span class="gn">' + (o ? o.duels : 0) + ' duels</span></span>';
+        }).join('') + '</div>' : '') +
       '</div>';
     $('picker').value = p.name + '|' + p.team;
     document.querySelectorAll('#lb tbody tr').forEach(function (tr) { tr.classList.toggle('sel', tr.dataset.k === p.name + '|' + p.team); });
@@ -375,7 +431,18 @@
       cell: function (p) { return pctS(num(p.adv['Trading|Trade kill success%']), 0); } },
     { k: 'kpr', lab: 'KPR vs role', title: 'Kills per round minus what is typical for the positions he plays', get: function (p) { return p.kprRole; }, hi: true, cell: function (p) { return p.kprRole == null ? '–' : scv(p.kprRole, signed(p.kprRole, 2)); } }
   ];
-  var advanced = false;
+  var advanced = false, gunView = false, gunSel = 'g:rifles';
+  var GUN_COLS = [
+    { k: 'rank', lab: '#', get: null },
+    { k: 'name', lab: 'Player', get: function (p) { return p.name.toLowerCase(); }, asc: true },
+    { k: 'gduels', lab: 'Duels', get: function (p) { var o = gunStat(p, gunSel); return o && o.duels; } },
+    { k: 'gwl', lab: 'W-L', get: function (p) { var o = gunStat(p, gunSel); return o && (o.won - (o.duels - o.won)); } },
+    { k: 'gwin', lab: 'Win%', get: function (p) { var o = gunStat(p, gunSel); return o && o.winPct; } },
+    { k: 'gexp', lab: 'Expected', title: 'Win% the situations predicted (gun, HP, numbers, distance\u2026)', get: function (p) { var o = gunStat(p, gunSel); return o && o.expPct; } },
+    { k: 'grat', lab: 'Gun rating', title: '(won + 5) / (expected wins + 5): 1.00 = won as many duels as expected', get: function (p) { var o = gunStat(p, gunSel); return o && o.rating; } },
+    { k: 'gkills', lab: 'Kills', get: function (p) { var o = gunStat(p, gunSel); return o && o.kills; } },
+    { k: 'ghs', lab: 'HS%', get: function (p) { var o = gunStat(p, gunSel); return o && o.hsPct; } }
+  ];
   var sortKey = 'rating', sortAsc = false, teamFilter = {}, roleFilter = {}, showLow = true;
   // Role filter: IGL = in the IGL list; AWPer = the team's AWPer; Rifler = everyone who isn't the AWPer.
   var ROLE_FILTERS = [['IGL', function (p) { return p.igl; }], ['AWPer', function (p) { return p.baseRole === 'AWPer'; }], ['Rifler', function (p) { return p.baseRole !== 'AWPer'; }]];
@@ -390,15 +457,23 @@
       '<label class="toggle"><input type="checkbox" id="showlow"' + (showLow ? ' checked' : '') + '> Show players under ' + MIN + ' rounds</label>' +
       '<div class="frow"><button class="fbtn all' + (Object.keys(roleFilter).length ? '' : ' on') + '" data-r="" aria-pressed="' + !Object.keys(roleFilter).length + '">All roles</button>' +
       ROLE_FILTERS.map(function (r) { return '<button class="fbtn role' + (roleFilter[r[0]] ? ' on' : '') + '" data-r="' + r[0] + '" aria-pressed="' + !!roleFilter[r[0]] + '">' + r[0] + '</button>'; }).join('') +
+      (HAS_GUNS ? (gunView ? '<select id="gunsel" class="gunsel" aria-label="Weapon">' +
+        '<optgroup label="Groups">' + GUN_GROUPS.map(function (g) { return '<option value="' + g.k + '"' + (gunSel === g.k ? ' selected' : '') + '>' + esc(g.lab) + '</option>'; }).join('') + '</optgroup>' +
+        '<optgroup label="Single guns">' + GUN_SINGLES.map(function (w) { return '<option value="' + esc(w) + '"' + (gunSel === w ? ' selected' : '') + '>' + esc(wname(w)) + '</option>'; }).join('') + '</optgroup></select>' : '') +
+        '<button class="fbtn adv gunbtn' + (gunView ? ' on' : '') + '" id="gunbtn" aria-pressed="' + gunView + '" title="Rate every player with one gun">Weapons</button>' : '') +
       '<button class="fbtn adv' + (advanced ? ' on' : '') + '" id="advbtn" aria-pressed="' + advanced + '" title="Show raw aim and other advanced stats">Advanced</button></div>';
   }
 
   function renderTable() {
-    var cols = advanced ? ADV_COLS : COLS;
+    var cols = gunView ? GUN_COLS : advanced ? ADV_COLS : COLS;
     var col = cols.filter(function (c) { return c.k === sortKey; })[0];
-    if (!col) { sortKey = advanced ? 'aim' : 'rating'; sortAsc = false; col = cols.filter(function (c) { return c.k === sortKey; })[0]; }
-    var list = players.filter(function (p) { return (!Object.keys(teamFilter).length || teamFilter[p.team]) && roleMatch(p) && (showLow || !p.low); });
+    if (!col) { sortKey = gunView ? 'grat' : advanced ? 'aim' : 'rating'; sortAsc = false; col = cols.filter(function (c) { return c.k === sortKey; })[0]; }
+    var list = players.filter(function (p) { return (!Object.keys(teamFilter).length || teamFilter[p.team]) && roleMatch(p) && (showLow || !p.low) && (!gunView || gunStat(p, gunSel)); });
     list.sort(function (a, b) {
+      if (gunView) {   // players with a real sample with this gun first
+        var la = gunStat(a, gunSel).duels < GUN_MIN, lb = gunStat(b, gunSel).duels < GUN_MIN;
+        if (la !== lb) return la ? 1 : -1;
+      }
       var x = col.get(a), y = col.get(b);
       if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
       var r = x < y ? -1 : x > y ? 1 : 0;
@@ -408,6 +483,23 @@
     var head = '<thead><tr>' + cols.map(function (c) {
       return '<th data-k="' + c.k + '"' + (c.title ? ' title="' + esc(c.title) + '"' : '') + (c.k === sortKey ? ' class="sorted"' : '') + '>' + esc(c.lab) + (c.k === sortKey ? (sortAsc ? ' ▲' : ' ▼') : '') + '</th>';
     }).join('') + '</tr></thead>';
+    if (gunView) {
+      var gtop = pool.map(function (p) { var o = gunStat(p, gunSel); return o && o.duels >= GUN_MIN ? o.rating : null; })
+        .filter(function (v) { return v != null; }).sort(function (a, b) { return b - a; }).slice(0, 3);
+      $('lb').innerHTML = head + '<tbody>' + list.map(function (p, i) {
+        var o = gunStat(p, gunSel), low = p.low || o.duels < GUN_MIN, r = low ? -1 : gtop.indexOf(o.rating);
+        var w = clamp((o.rating - 0.6) / 0.8, 0, 1) * 100;
+        return '<tr data-k="' + esc(p.name + '|' + p.team) + '" class="' + (low ? 'low' : '') + (current === p ? ' sel' : '') + '">' +
+          '<td class="dim">' + (i + 1) + '</td>' +
+          '<td><span class="pl">' + logo(p.team) + '<b title="' + esc(p.team) + '">' + esc(p.name) + '</b></span></td>' +
+          '<td>' + o.duels + '</td><td>' + o.won + '-' + (o.duels - o.won) + '</td><td>' + pctS(o.winPct, 0) + '</td><td class="dim">' + pctS(o.expPct, 0) + '</td>' +
+          '<td' + (r >= 0 ? ' class="top' + (r + 1) + '"' : '') + '><span class="rbar"><b>' + o.rating.toFixed(2) + '</b><i><s style="width:' + w.toFixed(1) + '%;background:' + gunColor(o.rating, low) + '"></s></i></span></td>' +
+          '<td>' + o.kills + '</td><td>' + (o.hsPct == null ? '–' : pctS(o.hsPct, 0)) + '</td></tr>';
+      }).join('') + '</tbody>';
+      $('lbnote').textContent = 'Gun rating for ' + gunLabel(gunSel) + ': duels with the gun in hand when the fight started (wins and losses), compared with the win chance the situation predicted. 1.00 = as expected. Under ' + GUN_MIN + ' duels in grey.';
+      return;
+    }
+    $('lbnote').textContent = '';
     if (advanced) {
       // best three (60+ rounds) in each column get a highlight, darkest = 1st
       var top = {};
@@ -927,7 +1019,7 @@
     }
     var pvc = e.target.closest('[data-preview]');
     if (pvc && !e.target.closest('a')) { openPreview(+pvc.dataset.preview); return; }
-    var tl = e.target.closest('.tile[data-tip]');
+    var tl = e.target.closest('.tile[data-tip], .gun[data-tip]');
     if (tl && window.matchMedia && !matchMedia('(hover: hover)').matches) {
       var tipEl = $('tip'), rc = tl.getBoundingClientRect();
       tipEl.innerHTML = tl.getAttribute('data-tip'); tipEl.style.display = 'block';
@@ -958,7 +1050,7 @@
     if (card) { var mc = e.target.closest('.mapc[data-map]'); openScoreboard(card.dataset.series, mc && mc.dataset.map); return; }
     var th = e.target.closest('#lb th');
     if (th) {
-      var c = (advanced ? ADV_COLS : COLS).filter(function (x) { return x.k === th.dataset.k; })[0];
+      var c = (gunView ? GUN_COLS : advanced ? ADV_COLS : COLS).filter(function (x) { return x.k === th.dataset.k; })[0];
       if (!c || !c.get) return;
       if (sortKey === c.k) sortAsc = !sortAsc; else { sortKey = c.k; sortAsc = !!c.asc; }
       renderTable(); return;
@@ -971,7 +1063,11 @@
     }
     var fb = e.target.closest('.fbtn');
     if (fb && fb.id === 'advbtn') {
-      advanced = !advanced; sortKey = advanced ? 'aim' : 'rating'; sortAsc = false;
+      advanced = !advanced; gunView = false; sortKey = advanced ? 'aim' : 'rating'; sortAsc = false;
+      renderFilters(); renderTable(); return;
+    }
+    if (fb && fb.id === 'gunbtn') {
+      gunView = !gunView; advanced = false; sortKey = gunView ? 'grat' : 'rating'; sortAsc = false;
       renderFilters(); renderTable(); return;
     }
     if (fb && fb.hasAttribute('data-r')) {
@@ -1001,6 +1097,7 @@
   document.addEventListener('change', function (e) {
     if (e.target.id === 'showlow') { showLow = e.target.checked; renderTable(); }
     if (e.target.id === 'picker') select(e.target.value, false);
+    if (e.target.id === 'gunsel') { gunSel = e.target.value; sortKey = 'grat'; sortAsc = false; renderTable(); }
   });
   function step(d) {
     var i = ordered.indexOf(current);
