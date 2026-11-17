@@ -154,9 +154,12 @@
   })();
   // ---------- gun ratings (Weapons sheet) ----------
   // Duels are counted for the gun each player held when the duel started, so losses count too.
-  // Gun rating = (duels won + K) / (duels expected to be won + K): 1.00 = won exactly as many
-  // fights as the situations predicted, 1.20 = 20 % more. K pulls small samples toward 1.00.
-  var GUN_K = 5, GUN_MIN = 10;
+  // Gun rating = the player's EOS rating x a gun factor. The factor compares his duels with that gun
+  // (won vs the win chance each situation predicted) with his duels with all guns, so a gun he fights
+  // better with than usual lifts the number above his EOS rating and a weaker one pulls it below; the
+  // ratings roughly average back to his EOS rating. K extra 'as usual' duels pull small samples
+  // toward his EOS rating.
+  var GUN_K = 8, GUN_MIN = 10;
   var WNAME = { ak47: 'AK-47', m4a1: 'M4A4', m4a1_silencer: 'M4A1-S', galilar: 'Galil AR', famas: 'FAMAS', aug: 'AUG', sg556: 'SG 553',
     awp: 'AWP', ssg08: 'SSG 08', glock: 'Glock-18', usp_silencer: 'USP-S', hkp2000: 'P2000', deagle: 'Desert Eagle', tec9: 'Tec-9',
     fiveseven: 'Five-SeveN', p250: 'P250', elite: 'Dual Berettas', cz75a: 'CZ75-Auto', revolver: 'R8', mp9: 'MP9', mac10: 'MAC-10',
@@ -185,19 +188,30 @@
     return [key];
   }
   function gunLabel(key) { var g = GUN_GROUPS.filter(function (x) { return x.k === key; })[0]; return g ? g.lab : wname(key); }
+  var allRatio = {};   // player -> duels won / expected with every gun
+  Object.keys(gunData).forEach(function (k) {
+    var w = 0, e = 0;
+    Object.keys(gunData[k]).forEach(function (g) { w += gunData[k][g].won; e += gunData[k][g].exp; });
+    allRatio[k] = e > 0 ? w / e : 1;
+  });
   function gunStat(p, key) {
-    var m = gunData[p.name + '|' + p.team] || {}, o = { duels: 0, won: 0, exp: 0, kills: 0, hs: 0 };
+    var pk = p.name + '|' + p.team, m = gunData[pk] || {}, o = { duels: 0, won: 0, exp: 0, kills: 0, hs: 0 };
     gunWeapons(key).forEach(function (w) { var x = m[w]; if (x) { o.duels += x.duels; o.won += x.won; o.exp += x.exp; o.kills += x.kills; o.hs += x.hs; } });
     if (!o.duels) return null;
-    o.rating = (o.won + GUN_K) / (o.exp + GUN_K);
+    var usual = allRatio[pk] || 1;
+    o.factor = (o.won + GUN_K) / (o.exp * usual + GUN_K);   // 1.00 = duels with this gun go as his duels usually do
+    o.base = p.rating != null ? p.rating : 1;
+    o.rating = o.base * o.factor;
     o.winPct = o.won / o.duels; o.expPct = o.exp / o.duels;
     o.hsPct = o.kills ? o.hs / o.kills : null;
     return o;
   }
-  function gunColor(r, low) { return low ? '#475569' : r >= 1.05 ? '#22c55e' : r >= 0.95 ? '#f59e0b' : '#f43f5e'; }
+  function gunColor(r, low) { return low ? '#475569' : ratingColor(r); }   // same colours as the EOS rating
   function gunTip(key, o) {
     if (!o) return '<b>' + esc(gunLabel(key)) + '</b><br>No duels';
-    return '<b>' + esc(gunLabel(key)) + '</b><br>Gun rating <b>' + o.rating.toFixed(2) + '</b> <span class=\'dim\'>(1.00 = won as many duels as expected)</span>' +
+    var d = Math.round((o.factor - 1) * 100);
+    return '<b>' + esc(gunLabel(key)) + '</b><br>Rating with this gun <b>' + o.rating.toFixed(2) + '</b>' +
+      '<br><span class=\'dim\'>EOS rating ' + o.base.toFixed(2) + (d === 0 ? ', duels with this gun as usual' : ', duels with this gun ' + (d > 0 ? '+' : '') + d + '% vs his usual') + '</span>' +
       '<br>' + o.duels + ' duels · ' + o.won + '-' + (o.duels - o.won) + ' · ' + pctS(o.winPct, 0) + ' won vs ' + pctS(o.expPct, 0) + ' expected' +
       '<br>' + o.kills + ' kills' + (o.hsPct != null ? ' · ' + pctS(o.hsPct, 0) + ' HS' : '') +
       (o.duels < GUN_MIN ? '<br><span class=\'dim\'>Few duels \u2013 read with care</span>' : '');
@@ -358,7 +372,7 @@
       '</div>' +
       '<div class="card-right">' +
         '<div class="tiles">' + tiles + '</div>' +
-        (HAS_GUNS ? '<div class="guns"><span class="guns-l" title="Gun rating: duels won vs expected with each gun (1.00 = as expected)">Guns <span>· duels won vs expected (1.00 = as expected)</span></span>' + GUN_GROUPS.map(function (g) {
+        (HAS_GUNS ? '<div class="guns"><span class="guns-l" title="EOS rating adjusted by how his duels with each gun compare with his duels overall">Guns <span>· EOS rating with each gun</span></span>' + GUN_GROUPS.map(function (g) {
           var o = gunStat(p, g.k), low = !o || o.duels < GUN_MIN;
           return '<span class="gun' + (low ? ' low' : '') + '" data-tip="' + esc(gunTip(g.k, o)) + '"><span class="gl">' + esc(g.short) + '</span>' +
             '<b style="color:' + (o ? gunColor(o.rating, low) : '#64748b') + '">' + (o ? o.rating.toFixed(2) : '–') + '</b><span class="gn">' + (o ? o.duels : 0) + ' duels</span></span>';
@@ -439,7 +453,7 @@
     { k: 'gwl', lab: 'W-L', get: function (p) { var o = gunStat(p, gunSel); return o && (o.won - (o.duels - o.won)); } },
     { k: 'gwin', lab: 'Win%', get: function (p) { var o = gunStat(p, gunSel); return o && o.winPct; } },
     { k: 'gexp', lab: 'Expected', title: 'Win% the situations predicted (gun, HP, numbers, distance\u2026)', get: function (p) { var o = gunStat(p, gunSel); return o && o.expPct; } },
-    { k: 'grat', lab: 'Gun rating', title: '(won + 5) / (expected wins + 5): 1.00 = won as many duels as expected', get: function (p) { var o = gunStat(p, gunSel); return o && o.rating; } },
+    { k: 'grat', lab: 'Gun rating', title: 'EOS rating adjusted by how his duels with this gun compare with his duels overall', get: function (p) { var o = gunStat(p, gunSel); return o && o.rating; } },
     { k: 'gkills', lab: 'Kills', get: function (p) { var o = gunStat(p, gunSel); return o && o.kills; } },
     { k: 'ghs', lab: 'HS%', get: function (p) { var o = gunStat(p, gunSel); return o && o.hsPct; } }
   ];
@@ -488,7 +502,7 @@
         .filter(function (v) { return v != null; }).sort(function (a, b) { return b - a; }).slice(0, 3);
       $('lb').innerHTML = head + '<tbody>' + list.map(function (p, i) {
         var o = gunStat(p, gunSel), low = p.low || o.duels < GUN_MIN, r = low ? -1 : gtop.indexOf(o.rating);
-        var w = clamp((o.rating - 0.6) / 0.8, 0, 1) * 100;
+        var w = clamp((o.rating - 0.5) / 1.1, 0, 1) * 100;
         return '<tr data-k="' + esc(p.name + '|' + p.team) + '" class="' + (low ? 'low' : '') + (current === p ? ' sel' : '') + '">' +
           '<td class="dim">' + (i + 1) + '</td>' +
           '<td><span class="pl">' + logo(p.team) + '<b title="' + esc(p.team) + '">' + esc(p.name) + '</b></span></td>' +
@@ -496,7 +510,7 @@
           '<td' + (r >= 0 ? ' class="top' + (r + 1) + '"' : '') + '><span class="rbar"><b>' + o.rating.toFixed(2) + '</b><i><s style="width:' + w.toFixed(1) + '%;background:' + gunColor(o.rating, low) + '"></s></i></span></td>' +
           '<td>' + o.kills + '</td><td>' + (o.hsPct == null ? '–' : pctS(o.hsPct, 0)) + '</td></tr>';
       }).join('') + '</tbody>';
-      $('lbnote').textContent = 'Gun rating for ' + gunLabel(gunSel) + ': duels with the gun in hand when the fight started (wins and losses), compared with the win chance the situation predicted. 1.00 = as expected. Under ' + GUN_MIN + ' duels in grey.';
+      $('lbnote').textContent = 'Gun rating for ' + gunLabel(gunSel) + ': the player\u2019s EOS rating, adjusted by how his duels with this gun (wins and losses vs the win chance each situation predicted) compare with his duels overall. Under ' + GUN_MIN + ' duels in grey and listed last.';
       return;
     }
     $('lbnote').textContent = '';
