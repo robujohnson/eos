@@ -741,6 +741,7 @@
   function teamStats(t) {
     var ps = players.filter(function (p) { return p.team === t.name; });
     var ma = (D.manAdv || {})[t.name] || {};
+    var tr = (D.teamRounds || {})[t.name] || {};
     var A = function (p, k) { return num(p.adv[k]); };
     var teamRounds = maps.reduce(function (s, m) { return s + (m.a === t.name || m.b === t.name ? m.rounds || 0 : 0); }, 0) || 1;
     var pr = sumOf(ps, function (p) { return p.rounds; }) || 1;
@@ -758,20 +759,33 @@
       util: sumOf(ps, function (p) { var v = A(p, 'Utility (per round)|Utility dmg'); return v == null ? 0 : v * p.rounds; }) / teamRounds,
       flash: sumOf(ps, function (p) { return A(p, 'Utility (per round)|Flash assists'); }) / teamRounds, // column is a count
       awp: K ? sumOf(ps, function (p) { return (A(p, 'Sniping|AWP kills%') || 0) * p.k; }) / K : null,
-      adv: ma.adv ? ma.advNext / ma.adv : null, advN: ma.advNext, advR: ma.adv,
-      dis: ma.dis ? ma.disNext / ma.dis : null, disN: ma.disNext, disR: ma.dis
+      // round results (Rounds sheet): falls back to 'next kill' if an older sheet has no round winners
+      pistol: tr.pistol ? tr.pistolWon / tr.pistol : null, pistolW: tr.pistolWon, pistolN: tr.pistol,
+      ct: tr.ct ? tr.ctWon / tr.ct : null, ctW: tr.ctWon, ctN: tr.ct,
+      t: tr.tr ? tr.tWon / tr.tr : null, tW: tr.tWon, tN: tr.tr,
+      rwin: tr.rounds ? tr.won / tr.rounds : null, rW: tr.won, rN: tr.rounds,
+      adv: tr.adv ? tr.advWon / tr.adv : ma.adv ? ma.advNext / ma.adv : null, advN: tr.adv ? tr.advWon : ma.advNext, advR: tr.adv || ma.adv,
+      dis: tr.dis ? tr.disWon / tr.dis : ma.dis ? ma.disNext / ma.dis : null, disN: tr.dis ? tr.disWon : ma.disNext, disR: tr.dis || ma.dis
     };
   }
+  var HAS_ROUNDS = D.teamRounds && Object.keys(D.teamRounds).length > 0;
+  function frac(v, a, b) { return pctS(v, 0) + ' <small>(' + a + '/' + b + ')</small>'; }
   var TEAM_STATS = [
+    ['Pistol rounds', 'pistol', function (v, s) { return frac(v, s.pistolW, s.pistolN); }, 'Pistol rounds (round 1 and 13) won'],
+    ['CT rounds', 'ct', function (v, s) { return frac(v, s.ctW, s.ctN); }, 'Rounds won on the CT side'],
+    ['T rounds', 't', function (v, s) { return frac(v, s.tW, s.tN); }, 'Rounds won on the T side'],
+    ['All rounds', 'rwin', function (v, s) { return frac(v, s.rW, s.rN); }, 'All rounds won (matches with demos)'],
+    ['Opening kills', 'open', function (v, s) { return frac(v, s.openW, s.openAtt); }, 'Share of rounds where the team got the first kill'],
+    [HAS_ROUNDS ? '5v4 conversion' : '5v4: next kill', 'adv', function (v, s) { return frac(v, s.advN, s.advR); },
+      HAS_ROUNDS ? 'After getting the opening kill (5v4), how often the team won the round' : 'After getting the opening kill (5v4), how often the team also got the next kill'],
+    [HAS_ROUNDS ? '4v5 conversion' : '4v5: next kill', 'dis', function (v, s) { return frac(v, s.disN, s.disR); },
+      HAS_ROUNDS ? 'After losing the opening duel (4v5), how often the team still won the round' : 'After losing the opening duel (4v5), how often the team got the next kill back'],
+    ['Clutches won', 'clutch', function (v, s) { return frac(v, s.clutchW, s.clutchA); }],
     ['Trade kill success', 'trade', function (v) { return pctS(v, 0); }, 'Share of trade chances (teammate killed nearby) that were converted into a trade kill'],
     ['Deaths traded', 'traded', function (v) { return pctS(v, 0); }, 'Share of tradeable deaths that a teammate traded'],
-    ['Opening kills', 'open', function (v, s) { return pctS(v, 0) + ' <small>(' + s.openW + '/' + s.openAtt + ')</small>'; }, 'Share of rounds where the team got the first kill'],
-    ['Clutches won', 'clutch', function (v, s) { return pctS(v, 0) + ' <small>(' + s.clutchW + '/' + s.clutchA + ')</small>'; }],
-    ['5v4: next kill', 'adv', function (v, s) { return pctS(v, 0) + ' <small>(' + s.advN + '/' + s.advR + ')</small>'; }, 'After getting the opening kill (5v4), how often the team also got the next kill (5v3)'],
-    ['4v5: next kill', 'dis', function (v, s) { return pctS(v, 0) + ' <small>(' + s.disN + '/' + s.disR + ')</small>'; }, 'After losing the opening duel (4v5), how often the team got the next kill back (4v4)'],
     ['Utility dmg / round', 'util', function (v) { return fx(v, 1); }, 'Team total per round'],
     ['Flash assists / round', 'flash', function (v) { return fx(v, 2); }, 'Team total per round']
-  ];
+  ].filter(function (d) { return HAS_ROUNDS || ['pistol', 'ct', 't', 'rwin'].indexOf(d[1]) < 0; });
   function ordinal(n) { var s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
   function openTeam(name) {
     var t = teams.filter(function (x) { return x.name === name; })[0]; if (!t) return;
