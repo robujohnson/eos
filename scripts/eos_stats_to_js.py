@@ -160,6 +160,48 @@ def man_advantage(wb, team_of):
     return out
 
 
+def team_rounds(wb, team_of):
+    """Per team, from the Rounds sheet (round winners and sides) and the kill log's opening kills:
+    pistol rounds (1 and 13), CT / T round wins, all rounds, and real man-advantage conversion:
+    adv / advWon = rounds where the team got the opening kill (5v4) / won them;
+    dis / disWon = rounds where the team lost the opening duel (4v5) / still won them."""
+    if 'Rounds' not in wb.sheetnames:
+        return {}
+    rows = list(wb['Rounds'].iter_rows(values_only=True))
+    h = [str(x) for x in rows[0]]
+    R = [dict(zip(h, r)) for r in rows[1:] if r and r[0]]
+    opening = {}
+    if 'Kill values' in wb.sheetnames:
+        kv = list(wb['Kill values'].iter_rows(values_only=True))
+        kh = [str(x) for x in kv[0]]
+        for r in kv[1:]:
+            k = dict(zip(kh, r))
+            if k.get('Match') and k.get('Opening') in (True, 1, 'TRUE', 'True'):
+                opening[(k['Match'], k['Round'])] = team_of.get(k.get('Killer'))
+    out = {}
+
+    def t(name):
+        return out.setdefault(name, dict(rounds=0, won=0, pistol=0, pistolWon=0, ct=0, ctWon=0, tr=0, tWon=0,
+                                          adv=0, advWon=0, dis=0, disWon=0))
+    for r in R:
+        ct, tt, win, rn = r.get('CT team'), r.get('T team'), r.get('Winner'), r.get('Round')
+        if not ct or not tt or not win:
+            continue
+        for team, side in ((ct, 'ct'), (tt, 'tr')):
+            x = t(team)
+            w = int(win == team)
+            x['rounds'] += 1; x['won'] += w
+            x[side] += 1; x['ctWon' if side == 'ct' else 'tWon'] += w
+            if rn in (1, 13):
+                x['pistol'] += 1; x['pistolWon'] += w
+        first = opening.get((r.get('Match'), rn))
+        if first in (ct, tt):
+            other = tt if first == ct else ct
+            t(first)['adv'] += 1; t(first)['advWon'] += int(win == first)
+            t(other)['dis'] += 1; t(other)['disWon'] += int(win == other)
+    return out
+
+
 def norm_name(n):
     # Case-insensitive, and 0 == o (m0n0xx -> Monoxx.webp)
     return re.sub(r'[^a-z0-9]', '', str(n).lower()).replace('0', 'o')
@@ -217,6 +259,7 @@ def main():
         'logos': logos,
         'photos': photos,
         'manAdv': man_advantage(wb, {r[lb_h.index('Player')]: r[lb_h.index('Team')] for r in lb_rows}),
+        'teamRounds': team_rounds(wb, {r[lb_h.index('Player')]: r[lb_h.index('Team')] for r in lb_rows}),
         'leaderboard': {'h': lb_h, 'rows': lb_rows},
         'advanced': {'h': adv_h, 'rows': adv_rows},
         'perMap': {'h': pm_h, 'rows': pm_rows},
