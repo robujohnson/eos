@@ -353,6 +353,29 @@
     { k: 'kd', lab: 'K-D', get: function (p) { return p.pm; } },
     { k: 'adr', lab: 'ADR', get: function (p) { return p.adr; } }
   ];
+  // Advanced view (hidden behind the 'Advanced' filter button): raw aim and a few deeper stats.
+  function scv(v, txt) { return '<span class="' + (v > 0 ? 'pos-v' : v < 0 ? 'neg-v' : '') + '">' + txt + '</span>'; }
+  function stepTxt(z) { return z == null ? '–' : scv(z, (z >= 0 ? '+' : '') + z.toFixed(2)); }
+  var ADV_COLS = [
+    { k: 'rank', lab: '#', get: null },
+    { k: 'name', lab: 'Player', get: function (p) { return p.name.toLowerCase(); }, asc: true },
+    { k: 'maps', lab: 'Maps', get: function (p) { return p.maps; } },
+    { k: 'aim', lab: 'Raw aim', title: 'Raw aim: 1.00 = league average, 0.10 = one standard deviation (placement + precision + strafing)', get: function (p) { return p.rawAim; }, hi: true,
+      cell: function (p) {
+        var w = p.rawAim == null ? 0 : clamp((p.rawAim - 0.7) / 0.6, 0, 1) * 100;
+        return '<span class="rbar"><b>' + fx(p.rawAim, 2) + '</b><i><s style="width:' + w.toFixed(1) + '%;background:' + (p.low ? '#475569' : p.rawAim >= 1.05 ? '#22c55e' : p.rawAim >= 0.95 ? '#f59e0b' : '#f43f5e') + '"></s></i></span>';
+      } },
+    { k: 'plc', lab: 'Placement', title: 'Crosshair placement, in steps (standard deviations) from the league average', get: function (p) { return p.aimParts && p.aimParts[0]; }, hi: true, cell: function (p) { return stepTxt(p.aimParts[0]); } },
+    { k: 'prc', lab: 'Precision', title: 'Head, spray and spotted accuracy, in steps from the league average', get: function (p) { return p.aimParts && p.aimParts[1]; }, hi: true, cell: function (p) { return stepTxt(p.aimParts[1]); } },
+    { k: 'str', lab: 'Strafing', title: 'Counter-strafing, in steps from the league average', get: function (p) { return p.aimParts && p.aimParts[2]; }, hi: true, cell: function (p) { return stepTxt(p.aimParts[2]); } },
+    { k: 'dwe', lab: 'Duel +/- exp.', title: 'Duel win% minus the win% expected from each duel\u2019s situation', get: function (p) { return num(p.adv['Firepower|Duel win% over expected']); }, hi: true,
+      cell: function (p) { var v = num(p.adv['Firepower|Duel win% over expected']); return v == null ? '–' : scv(v, signedPct(v, 1)); } },
+    { k: 'open', lab: 'Open%', title: 'Opening duels won', get: function (p) { return p.open; }, hi: true, cell: function (p) { return pctS(p.open, 0); } },
+    { k: 'trd', lab: 'Trade%', title: 'Trade chances converted into a trade kill', get: function (p) { return num(p.adv['Trading|Trade kill success%']); }, hi: true,
+      cell: function (p) { return pctS(num(p.adv['Trading|Trade kill success%']), 0); } },
+    { k: 'kpr', lab: 'KPR vs role', title: 'Kills per round minus what is typical for the positions he plays', get: function (p) { return p.kprRole; }, hi: true, cell: function (p) { return p.kprRole == null ? '–' : scv(p.kprRole, signed(p.kprRole, 2)); } }
+  ];
+  var advanced = false;
   var sortKey = 'rating', sortAsc = false, teamFilter = {}, roleFilter = {}, showLow = true;
   // Role filter: IGL = in the IGL list; AWPer = the team's AWPer; Rifler = everyone who isn't the AWPer.
   var ROLE_FILTERS = [['IGL', function (p) { return p.igl; }], ['AWPer', function (p) { return p.baseRole === 'AWPer'; }], ['Rifler', function (p) { return p.baseRole !== 'AWPer'; }]];
@@ -366,11 +389,14 @@
       teams.map(function (t) { return '<button class="fbtn' + (teamFilter[t.name] ? ' on' : '') + '" data-t="' + esc(t.name) + '" aria-pressed="' + !!teamFilter[t.name] + '">' + logo(t.name) + esc(t.name) + '</button>'; }).join('') +
       '<label class="toggle"><input type="checkbox" id="showlow"' + (showLow ? ' checked' : '') + '> Show players under ' + MIN + ' rounds</label>' +
       '<div class="frow"><button class="fbtn all' + (Object.keys(roleFilter).length ? '' : ' on') + '" data-r="" aria-pressed="' + !Object.keys(roleFilter).length + '">All roles</button>' +
-      ROLE_FILTERS.map(function (r) { return '<button class="fbtn role' + (roleFilter[r[0]] ? ' on' : '') + '" data-r="' + r[0] + '" aria-pressed="' + !!roleFilter[r[0]] + '">' + r[0] + '</button>'; }).join('') + '</div>';
+      ROLE_FILTERS.map(function (r) { return '<button class="fbtn role' + (roleFilter[r[0]] ? ' on' : '') + '" data-r="' + r[0] + '" aria-pressed="' + !!roleFilter[r[0]] + '">' + r[0] + '</button>'; }).join('') +
+      '<button class="fbtn adv' + (advanced ? ' on' : '') + '" id="advbtn" aria-pressed="' + advanced + '" title="Show raw aim and other advanced stats">Advanced</button></div>';
   }
 
   function renderTable() {
-    var col = COLS.filter(function (c) { return c.k === sortKey; })[0];
+    var cols = advanced ? ADV_COLS : COLS;
+    var col = cols.filter(function (c) { return c.k === sortKey; })[0];
+    if (!col) { sortKey = advanced ? 'aim' : 'rating'; sortAsc = false; col = cols.filter(function (c) { return c.k === sortKey; })[0]; }
     var list = players.filter(function (p) { return (!Object.keys(teamFilter).length || teamFilter[p.team]) && roleMatch(p) && (showLow || !p.low); });
     list.sort(function (a, b) {
       var x = col.get(a), y = col.get(b);
@@ -379,9 +405,29 @@
       return sortAsc ? r : -r;
     });
     var maxR = Math.max.apply(null, players.map(function (p) { return p.rating || 0; }));
-    var head = '<thead><tr>' + COLS.map(function (c) {
+    var head = '<thead><tr>' + cols.map(function (c) {
       return '<th data-k="' + c.k + '"' + (c.title ? ' title="' + esc(c.title) + '"' : '') + (c.k === sortKey ? ' class="sorted"' : '') + '>' + esc(c.lab) + (c.k === sortKey ? (sortAsc ? ' ▲' : ' ▼') : '') + '</th>';
     }).join('') + '</tr></thead>';
+    if (advanced) {
+      // best three (60+ rounds) in each column get a highlight, darkest = 1st
+      var top = {};
+      ADV_COLS.forEach(function (c) {
+        if (!c.hi) return;
+        top[c.k] = pool.map(c.get).filter(function (v) { return v != null; }).sort(function (a, b) { return b - a; }).slice(0, 3);
+      });
+      $('lb').innerHTML = head + '<tbody>' + list.map(function (p, i) {
+        var k = p.name + '|' + p.team;
+        return '<tr data-k="' + esc(k) + '" class="' + (p.low ? 'low' : '') + (current === p ? ' sel' : '') + '">' +
+          '<td class="dim">' + (i + 1) + '</td>' +
+          '<td><span class="pl">' + logo(p.team) + '<b title="' + esc(p.team) + '">' + esc(p.name) + '</b></span></td>' +
+          '<td>' + p.maps + '</td>' +
+          ADV_COLS.slice(3).map(function (c) {
+            var v = c.get(p), t = top[c.k] || [], r = p.low || v == null ? -1 : t.indexOf(v);
+            return '<td' + (r >= 0 ? ' class="top' + (r + 1) + '"' : '') + '>' + c.cell(p) + '</td>';
+          }).join('') + '</tr>';
+      }).join('') + '</tbody>';
+      return;
+    }
     var body = '<tbody>' + list.map(function (p, i) {
       var k = p.name + '|' + p.team;
       var w = p.rating == null ? 0 : clamp(p.rating / maxR, 0, 1) * 100;
@@ -912,7 +958,7 @@
     if (card) { var mc = e.target.closest('.mapc[data-map]'); openScoreboard(card.dataset.series, mc && mc.dataset.map); return; }
     var th = e.target.closest('#lb th');
     if (th) {
-      var c = COLS.filter(function (x) { return x.k === th.dataset.k; })[0];
+      var c = (advanced ? ADV_COLS : COLS).filter(function (x) { return x.k === th.dataset.k; })[0];
       if (!c || !c.get) return;
       if (sortKey === c.k) sortAsc = !sortAsc; else { sortKey = c.k; sortAsc = !!c.asc; }
       renderTable(); return;
@@ -924,6 +970,10 @@
       renderLeaders(); return;
     }
     var fb = e.target.closest('.fbtn');
+    if (fb && fb.id === 'advbtn') {
+      advanced = !advanced; sortKey = advanced ? 'aim' : 'rating'; sortAsc = false;
+      renderFilters(); renderTable(); return;
+    }
     if (fb && fb.hasAttribute('data-r')) {
       var rn = fb.dataset.r;
       if (!rn) roleFilter = {};
