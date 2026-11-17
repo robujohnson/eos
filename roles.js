@@ -1,5 +1,5 @@
 // In-game leaders. Shown as "IGL" next to the automatic role on the player card.
-window.EOS_IGLS = ["Jelo", "p3kko", "m0n0xx", "Heke", "epik"];
+window.EOS_IGLS = ["Jelo", "p3kko", "m0n0xx", "Heke", "epik", "Opa"];
 
 // Roles are worked out automatically from the stats (AWPer, Spacetaker, Pack rifler,
 // Lurker, Rifler). Put a role here only to override that for a player; "" = automatic.
