@@ -1159,64 +1159,15 @@
   });
 
 
-  // ---------- previous seasons (history.js) ----------
+  // ---------- EOS champions (history.js); season stats live on /eos/seasons/ ----------
   function renderHistory() {
-    var H = window.EOS_HISTORY, sec = $('sec-history');
-    if (!H || !H.seasons || !H.seasons.length) { if (sec) sec.hidden = true; return; }
+    var H = window.EOS_HISTORY, sec = $('sec-champions');
+    if (!H || !H.winners || !H.winners.length) { if (sec) sec.hidden = true; return; }
     var lowLogo = {}; Object.keys(D.logos || {}).forEach(function (t) { lowLogo[t.toLowerCase()] = t; });
-    function tm(name) {
-      var cur = lowLogo[String(name).toLowerCase()];
-      return '<span class="tm">' + (cur ? logo(cur) : '') + esc(name) + '</span>';
-    }
-    var nowByName = {}; players.forEach(function (p) { var k = p.name.toLowerCase(); if (!nowByName[k]) nowByName[k] = p; });
-    var winOf = {}; (H.winners || []).forEach(function (w) { winOf[w.s] = w; });
-    var COLS = [
-      { k: 'n', lab: 'Player', i: 0 }, { k: 't', lab: 'Team', i: 1 },
-      { k: 'r', lab: 'Rating', i: 2, d: 2 }, { k: 'm', lab: 'Matches', i: 3, d: 0 },
-      { k: 'adr', lab: 'ADR', i: 4, d: 1 }, { k: 'kd', lab: 'K/D', i: 5, d: 1 }
-    ];
-    var season = H.seasons[0], sortK = 'r', sortDir = -1;
-    $('hs-season').innerHTML = H.seasons.map(function (x) { return '<option value="' + x.s + '">EOS ' + x.s + '</option>'; }).join('');
-    function draw() {
-      var cols = COLS.filter(function (c) { return c.i < 4 || season.cols.indexOf(c.k) >= 0; });
-      var col = cols.filter(function (c) { return c.k === sortK; })[0] || cols[2];
-      var rs = season.rows.slice().sort(function (a, b) {
-        var x = a[col.i], y = b[col.i];
-        if (col.i < 2) return sortDir * String(x).localeCompare(String(y), 'fi', { sensitivity: 'base' });
-        if (x == null) return 1; if (y == null) return -1;
-        return sortDir * (x - y) || b[2] - a[2];
-      });
-      var ranked = season.rows.filter(function (r) { return r[3] >= 5; }).map(function (r) { return r[2]; }).sort(function (a, b) { return b - a; });
-      var w = winOf[season.s];
-      $('hs-final').innerHTML = w
-        ? '<span class="win"><span aria-hidden="true">🏆</span>' + tm(w.w) + '</span><span class="ru">Runner-up <b>' + esc(w.r) + '</b></span>'
-        : '<span class="ru">Final result not recorded</span>';
-      $('hs-table').innerHTML = '<thead><tr>' + cols.map(function (c) {
-        return '<th data-k="' + c.k + '"' + (c.k === col.k ? ' class="sorted"' : '') + '>' + c.lab + (c.k === col.k ? (sortDir < 0 ? ' ↓' : ' ↑') : '') + '</th>';
-      }).join('') + '</tr></thead><tbody>' + rs.map(function (r) {
-        var now = nowByName[String(r[0]).toLowerCase()], low = r[3] < 5;
-        var top = low ? -1 : ranked.indexOf(r[2]);
-        return '<tr class="' + (low ? 'low' : '') + (now ? ' cur' : '') + '"' + (now ? ' data-k="' + esc(now.name + '|' + now.team) + '" title="Open ' + esc(now.name) + '’s EOS 14 card"' : '') + '>' +
-          '<td><span class="pl"><b>' + esc(r[0]) + '</b></span></td><td>' + tm(r[1]) + '</td>' +
-          cols.slice(2).map(function (c) {
-            var v = r[c.i], cls = c.k === 'r' && top >= 0 && top < 3 ? ' class="top' + (top + 1) + '"' : '';
-            return '<td' + cls + '>' + (v == null ? '–' : v.toFixed(c.d)) + '</td>';
-          }).join('') + '</tr>';
-      }).join('') + '</tbody>';
-    }
-    $('hs-season').addEventListener('change', function () {
-      var v = +this.value; season = H.seasons.filter(function (x) { return x.s === v; })[0] || H.seasons[0];
-      if (season.cols.indexOf(sortK) < 0 && ['n', 't', 'r', 'm'].indexOf(sortK) < 0) { sortK = 'r'; sortDir = -1; }
-      draw();
-    });
-    $('hs-table').addEventListener('click', function (e) {
-      var th = e.target.closest('th');
-      if (th) { var k = th.dataset.k; if (k === sortK) sortDir = -sortDir; else { sortK = k; sortDir = k === 'n' || k === 't' ? 1 : -1; } draw(); return; }
-      var tr = e.target.closest('tr.cur'); if (tr) select(tr.dataset.k, true);
-    });
-    draw();
-    $('hs-champs').innerHTML = (H.winners || []).slice().reverse().map(function (w) {
-      return '<div><span class="n">EOS ' + w.s + '</span><b>🏆 ' + esc(w.w) + '</b><span class="r">vs ' + esc(w.r) + '</span></div>';
+    $('hs-champs').innerHTML = H.winners.slice().sort(function (a, b) { return b.s - a.s; }).map(function (w) {
+      var cur = lowLogo[String(w.w).toLowerCase()];
+      var has = H.seasons.some(function (x) { return x.s === w.s; });
+      return '<div>' + logo(cur || w.w) + '<span><span class="n">EOS ' + w.s + (has ? ' · <a href="/eos/seasons/#' + w.s + '">stats</a>' : '') + '</span><b>🏆 ' + esc(w.w) + '</b><span class="r">vs ' + esc(w.r) + '</span></span></div>';
     }).join('');
   }
 
@@ -1293,7 +1244,7 @@
 
   // ---------- section tabs ----------
   var bar = document.querySelector('.sitebar'), tabsEl = $('tabs');
-  var tabBtns = [].slice.call(tabsEl.querySelectorAll('button'));
+  var tabBtns = [].slice.call(tabsEl.querySelectorAll('button[data-target]'));
   function hdr() { return bar.offsetHeight + 12; }
   function setHdr() { document.documentElement.style.setProperty('--hdr', hdr() + 'px'); }
   setHdr(); window.addEventListener('resize', setHdr);

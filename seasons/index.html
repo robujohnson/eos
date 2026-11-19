@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#182839">
+<script>try{if(localStorage.getItem('eos-theme')==='light'){document.documentElement.setAttribute('data-theme','light');document.querySelector('meta[name=theme-color]').content='#efe6d4'}}catch(e){}</script>
+<title>EOS past seasons</title>
+<link rel="canonical" href="https://robujohnson.github.io/eos/seasons/">
+<link rel="icon" type="image/svg+xml" href="/eos/favicon.svg">
+<style>
+:root{
+  --bg:#182839; --panel:rgba(18,32,48,.7); --panel2:rgba(15,25,40,.85); --line:rgba(51,65,85,.5); --text:#f1f5f9; --muted:#94a3b8; --dim:#64748b;
+  --accent:#f97316; --accent2:#fb923c;
+  --sans:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;color:var(--text);font:14px/1.45 var(--sans);background:var(--bg)}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(135deg,rgb(24,40,57) 0%,rgb(34,55,77) 50%,rgb(24,40,57) 100%)}
+a{color:var(--accent2)}
+.sitebar{background:rgb(24,40,57);border-bottom:1px solid rgba(30,58,138,.4);position:sticky;top:0;z-index:20}
+.sitebar-in{max-width:1180px;margin:0 auto;padding:7px 16px;display:flex;align-items:center;gap:12px}
+.home{display:flex;align-items:center;gap:8px;text-decoration:none}
+.home:hover{opacity:.8}
+.sb-title{font-size:24px;font-weight:900;color:#fff;line-height:1.15}
+.sb-sub{font-size:12px;color:var(--muted);font-weight:500}
+.tabs{border-top:1px solid rgba(30,58,138,.25)}
+.tabs-in{max-width:1180px;margin:0 auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.tabs-in::-webkit-scrollbar{display:none}
+.tabs a{flex-shrink:0;border-bottom:2px solid transparent;color:var(--muted);font-size:13px;font-weight:600;padding:11px 14px 9px;white-space:nowrap;text-decoration:none}
+.tabs a:hover{color:var(--text)}
+.tabs a.on{color:#fff;border-bottom-color:var(--accent)}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 60px}
+h1{font-weight:900;font-size:30px;line-height:1.1;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.flag{border-radius:3px;box-shadow:0 0 0 1px rgba(255,255,255,.15)}
+.sub{color:var(--muted);font-size:13px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:18px 0 12px}
+.seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{background:none;border:0;color:var(--muted);font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border-radius:7px;cursor:pointer}
+.seg button.on{background:rgba(249,115,22,.18);color:#fff}
+input[type=search]{margin-left:auto;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:8px 12px;font:inherit;font-size:13px;min-width:200px}
+input[type=search]:focus{outline:none;border-color:rgba(249,115,22,.6)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:10px 12px;text-align:right;background:var(--panel2);border-bottom:1px solid var(--line)}
+td{padding:8px 12px;text-align:right;border-bottom:1px solid rgba(51,65,85,.35)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:rgba(249,115,22,.05)}
+th.l,td.l{text-align:left}
+td.rk{color:var(--dim);width:56px}
+.nick{font-weight:700;color:var(--text);text-decoration:none}
+.nick:hover{color:var(--accent2)}
+.pl{display:flex;align-items:center;gap:8px;min-width:0}
+.pl img{width:20px;height:20px;object-fit:contain;flex-shrink:0}
+.pl .t{font-size:11px;color:var(--muted)}
+.lvl{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:11px;font-weight:800;border:2px solid currentColor;background:rgba(0,0,0,.25)}
+.elo{font-weight:800;font-size:15px}
+.eos-row td{background:rgba(249,115,22,.06)}
+.tag{display:inline-block;margin-left:6px;font-size:9.5px;font-weight:800;letter-spacing:.05em;color:var(--accent2);background:rgba(249,115,22,.15);border-radius:999px;padding:1px 6px;vertical-align:1px}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.dl{width:70px;font-size:12px;font-weight:700;white-space:nowrap}
+.up{color:#4ade80} .down{color:#fb7185}
+.more{display:block;width:100%;background:var(--panel2);border:0;border-top:1px solid var(--line);color:var(--accent2);font:inherit;font-size:13px;font-weight:700;padding:12px;cursor:pointer}
+.more:hover{background:rgba(249,115,22,.08)}
+.note{font-size:11.5px;color:var(--muted);margin-top:10px;font-style:italic}
+.dim{color:var(--dim)}
+@media (max-width:560px){
+  .sb-title{font-size:20px} .sb-sub{display:none} .home img{width:34px;height:34px}
+  h1{font-size:24px}
+  input[type=search]{margin-left:0;min-width:0;width:100%}
+  th,td{padding:8px 6px}
+  .hide-sm{display:none}
+}
+.sitebar-in{justify-content:space-between}
+.theme-btn{display:inline-flex;align-items:center;gap:7px;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;flex-shrink:0}
+.theme-btn .ti{font-size:14px;line-height:1} .theme-btn .ti-sun{display:none} .theme-btn .tl::after{content:"Light"}
+:root[data-theme="light"] .theme-btn .ti-moon{display:none}
+:root[data-theme="light"] .theme-btn .ti-sun{display:inline}
+:root[data-theme="light"] .theme-btn .tl::after{content:"Dark"}
+:root[data-theme="light"]{color-scheme:light;--bg:#f2ebdd;--panel:rgba(253,250,243,.88);--panel2:#ece3d1;--line:#d8c9ae;--text:#2a2318;--muted:#6c604e;--dim:#9a8c74;--accent:#c2410c;--accent2:#b45309}
+:root[data-theme="light"] body::before{background:linear-gradient(135deg,#f6f0e4 0%,#ece2ce 50%,#f6f0e4 100%)}
+:root[data-theme="light"] .sitebar{background:#ece2cf;border-bottom-color:#d8c9ae}
+:root[data-theme="light"] .sb-title,:root[data-theme="light"] .tabs a.on,:root[data-theme="light"] .seg button.on{color:var(--text)}
+:root[data-theme="light"] .seg button.on{background:rgba(194,65,12,.12)}
+:root[data-theme="light"] td{border-bottom-color:rgba(120,96,60,.18)}
+:root[data-theme="light"] .eos-row td{background:rgba(194,65,12,.07)}
+:root[data-theme="light"] .up{color:#15803d} :root[data-theme="light"] .down{color:#be123c}
+.tabs button{flex-shrink:0;background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:600;padding:11px 14px 9px;cursor:pointer;white-space:nowrap}
+.tabs button:hover{color:var(--text)}
+.tabs button.on{color:#fff;border-bottom-color:var(--accent)}
+:root[data-theme="light"] .tabs button.on{color:var(--text)}
+.champ{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin:16px 0 18px}
+.champ .win{display:inline-flex;align-items:center;gap:10px;font-weight:800;font-size:16px;background:rgba(250,204,21,.12);border:1px solid rgba(250,204,21,.4);border-radius:999px;padding:6px 16px 6px 8px}
+.champ .win img{width:26px;height:26px}
+.champ .ru{color:var(--muted)} .champ .ru b{color:var(--text)}
+:root[data-theme="light"] .champ .win{background:rgba(202,138,4,.14);border-color:rgba(161,98,7,.4)}
+th{cursor:pointer;user-select:none;white-space:nowrap} th.sorted{color:var(--accent2)}
+td.rk{width:46px;text-align:center}
+.rkb{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:24px;padding:0 6px;border-radius:7px;font-weight:800;font-size:12.5px;color:var(--muted);background:var(--panel2)}
+.rk1{background:#eab308;color:#1c1500} .rk2{background:#cbd5e1;color:#111827} .rk3{background:#c2763a;color:#fff}
+tr.low td{color:var(--dim)} tr.low .nick{color:var(--dim);font-weight:600}
+.pl .tn{color:var(--text)}
+td.rt{font-weight:800}
+a.nick{text-decoration:underline;text-decoration-color:rgba(249,115,22,.5);text-underline-offset:3px}
+@media (max-width:560px){ table{font-size:12.5px} td.tm{white-space:normal} .pl img{display:none} }
+</style>
+</head>
+<body>
+<div class="sitebar">
+  <div class="sitebar-in">
+    <a class="home" href="/eos/" title="EOS 14 stats home"><img src="/eos/favicon.svg" alt="EOS" width="42" height="42"><span><span class="sb-title">Elisa Open Suomi 14</span><br><span class="sb-sub">Player &amp; team stats</span></span></a>
+    <button type="button" class="theme-btn" id="themebtn" aria-label="Switch between dark and light theme"><span class="ti ti-moon" aria-hidden="true">☾</span><span class="ti ti-sun" aria-hidden="true">☀</span><span class="tl"></span></button>
+  </div>
+  <nav class="tabs" aria-label="Pages"><div class="tabs-in"><a href="/eos/">← EOS 14 stats</a><button type="button" id="seasons-btn" class="on">Past seasons<span class="car" aria-hidden="true">▾</span></button><a href="/eos/faceit/">FACEIT ELO</a></div></nav>
+</div>
+<div class="wrap">
+  <h1 id="title">Past seasons</h1>
+  <div class="sub" id="sub"></div>
+  <div class="champ" id="champ"></div>
+  <div class="panel" style="overflow-x:auto"><div id="list"></div></div>
+  <div class="note">Ranked by HLTV 2.0 rating among players with 5+ matches; players with fewer matches are dimmed and unranked. Click a column to sort. Underlined names play in EOS 14 – click to open their card.</div>
+</div>
+
+<script src="/eos/history.js?v=20261119122109"></script>
+<script src="/eos/data.js?v=20261119122109"></script>
+<script src="/eos/season-menu.js?v=20261119122109"></script>
+<script>
+(function () {
+  'use strict';
+  var H = window.EOS_HISTORY, D = window.EOS_DATA || {};
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  $('themebtn').addEventListener('click', function () {
+    var light = document.documentElement.getAttribute('data-theme') !== 'light';
+    if (light) document.documentElement.setAttribute('data-theme', 'light'); else document.documentElement.removeAttribute('data-theme');
+    var mc = document.querySelector('meta[name=theme-color]'); if (mc) mc.content = light ? '#efe6d4' : '#182839';
+    try { localStorage.setItem('eos-theme', light ? 'light' : 'dark'); } catch (e) {}
+  });
+  if (!H || !H.seasons || !H.seasons.length) { $('list').innerHTML = '<div class="empty">No season data.</div>'; return; }
+
+  // team logos: current EOS teams use their logo, others a coloured shield with initials
+  var COLORS = ['#38bdf8', '#f472b6', '#a3e635', '#fb923c', '#c084fc', '#facc15', '#2dd4bf', '#f87171', '#60a5fa', '#e879f9'];
+  var lowLogo = {}; Object.keys(D.logos || {}).forEach(function (t) { lowLogo[t.toLowerCase()] = D.logos[t]; });
+  function initials(t) { var w = String(t).replace(/\.[a-z]+$/i, '').split(/[\s_-]+/).filter(Boolean); return (w.length > 1 ? w[0][0] + w[1][0] : w[0].slice(0, 2)).toUpperCase(); }
+  function hash(t) { var h = 0; for (var i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0; return h; }
+  function shield(t) {
+    var c = COLORS[hash(String(t).toLowerCase()) % COLORS.length];
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + c + '"/><stop offset="1" stop-color="#1e293b"/></linearGradient></defs>' +
+      '<path d="M32 3 L57 11 V30 C57 45 46 56 32 61 C18 56 7 45 7 30 V11 Z" fill="url(#g)" stroke="rgba(255,255,255,.35)" stroke-width="2"/>' +
+      '<text x="32" y="38" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="19" fill="#fff">' + esc(initials(t)) + '</text></svg>';
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+  function teamLogo(t) {
+    var s = lowLogo[String(t).toLowerCase()];
+    return '<img src="' + (s ? '/eos/logos/' + esc(s) + '.png' : shield(t)) + '" alt="" loading="lazy">';
+  }
+  // EOS 14 players, to link names to their current card
+  var now = {};
+  if (D.leaderboard) { var h = D.leaderboard.h, iN = h.indexOf('Player'); D.leaderboard.rows.forEach(function (r) { now[String(r[iN]).toLowerCase()] = r[iN]; }); }
+  var winOf = {}; (H.winners || []).forEach(function (w) { winOf[w.s] = w; });
+
+  var COLS = [
+    { k: 'rk', lab: '#', l: true }, { k: 'n', lab: 'Player', i: 0, l: true }, { k: 't', lab: 'Team', i: 1, l: true },
+    { k: 'r', lab: 'Rating', i: 2, d: 2 }, { k: 'm', lab: 'Matches', i: 3, d: 0 },
+    { k: 'adr', lab: 'ADR', i: 4, d: 1 }, { k: 'kd', lab: 'K/D', i: 5, d: 1 }
+  ];
+  var MINM = 5, sortK = 'rk', sortDir = 1, season;
+
+  function render() {
+    var want = parseInt(location.hash.slice(1), 10);
+    season = H.seasons.filter(function (x) { return x.s === want; })[0] || H.seasons[0];
+    document.title = 'EOS ' + season.s + ' stats';
+    $('title').textContent = 'Elisa Open Suomi ' + season.s;
+    $('sub').textContent = 'Season ' + season.s + ' player stats · ' + season.rows.length + ' players';
+    var w = winOf[season.s];
+    $('champ').innerHTML = w ? '<span class="win">' + teamLogo(w.w) + '<span>🏆 ' + esc(w.w) + '</span></span><span class="ru">Runner-up <b>' + esc(w.r) + '</b></span>' : '';
+    // rank: by rating among players with MINM+ matches; equal ratings share a rank
+    var ranked = season.rows.filter(function (r) { return r[3] >= MINM; }).sort(function (a, b) { return b[2] - a[2]; });
+    var rank = new Map();
+    ranked.forEach(function (r, i) { rank.set(r, i > 0 && ranked[i - 1][2] === r[2] ? rank.get(ranked[i - 1]) : i + 1); });
+    var cols = COLS.filter(function (c) { return c.i == null || c.i < 4 || season.cols.indexOf(c.k) >= 0; });
+    var col = cols.filter(function (c) { return c.k === sortK; })[0] || cols[0];
+    var rows = season.rows.slice().sort(function (a, b) {
+      if (col.k === 'rk') { var x = rank.get(a), y = rank.get(b); if (x == null && y == null) return b[2] - a[2]; if (x == null) return 1; if (y == null) return -1; return sortDir * (x - y); }
+      if (col.i < 2) return sortDir * String(a[col.i]).localeCompare(String(b[col.i]), 'fi', { sensitivity: 'base' });
+      var p = a[col.i], q = b[col.i]; if (p == null) return 1; if (q == null) return -1;
+      return sortDir * (p - q) || b[2] - a[2];
+    });
+    $('list').innerHTML = '<table><thead><tr>' + cols.map(function (c) {
+      var on = c.k === col.k;
+      return '<th data-k="' + c.k + '" class="' + (c.l ? 'l' : '') + (on ? ' sorted' : '') + '">' + c.lab + (on && c.k !== 'rk' ? (sortDir < 0 ? ' ↓' : ' ↑') : '') + '</th>';
+    }).join('') + '</tr></thead><tbody>' + rows.map(function (r) {
+      var rk = rank.get(r), cur = now[String(r[0]).toLowerCase()];
+      var name = cur ? '<a class="nick" href="/eos/#' + encodeURIComponent(cur) + '" title="Open ' + esc(cur) + '\u2019s EOS 14 card">' + esc(r[0]) + '</a>' : '<span class="nick">' + esc(r[0]) + '</span>';
+      return '<tr' + (rk == null ? ' class="low"' : '') + '><td class="rk">' + (rk == null ? '<span class="dim">–</span>' : '<span class="rkb' + (rk <= 3 ? ' rk' + rk : '') + '">' + rk + '</span>') + '</td>' +
+        '<td class="l">' + name + '</td><td class="l tm"><span class="pl">' + teamLogo(r[1]) + '<span class="tn">' + esc(r[1]) + '</span></span></td>' +
+        cols.slice(3).map(function (c) { var v = r[c.i]; return '<td' + (c.k === 'r' ? ' class="rt"' : '') + '>' + (v == null ? '<span class="dim">–</span>' : v.toFixed(c.d)) + '</td>'; }).join('') + '</tr>';
+    }).join('') + '</tbody></table>';
+  }
+  $('list').addEventListener('click', function (e) {
+    var th = e.target.closest('th'); if (!th) return;
+    var k = th.dataset.k;
+    if (k === sortK) sortDir = -sortDir; else { sortK = k; sortDir = k === 'rk' || k === 'n' || k === 't' ? 1 : -1; }
+    render();
+  });
+  window.addEventListener('hashchange', function () { render(); window.scrollTo(0, 0); });
+  render();
+})();
+</script>
+<script data-goatcounter="https://robu.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>
