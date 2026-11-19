@@ -302,15 +302,22 @@ def main():
         stamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
         with open(page, encoding='utf-8') as f:
             html = f.read()
-        html = re.sub(r'((?:data|app|roles|schedule|extra-results|history)\.js\?v=)\d+', r'\g<1>' + stamp, html)
+        html = re.sub(r'((?:data|app|roles|schedule|extra-results|history|season-menu)\.js\?v=)\d+', r'\g<1>' + stamp, html)
         with open(page, 'w', encoding='utf-8') as f:
             f.write(html)
     fpage = os.path.join(os.path.dirname(OUT), 'faceit', 'index.html')
     if os.path.exists(fpage):
         with open(fpage, encoding='utf-8') as f:
             html = f.read()
-        html = re.sub(r'(/eos/data\.js\?v=)\d+', r'\g<1>' + stamp, html)
+        html = re.sub(r'(/eos/(?:data|history|season-menu)\.js\?v=)\d+', r'\g<1>' + stamp, html)
         with open(fpage, 'w', encoding='utf-8') as f:
+            f.write(html)
+    spage = os.path.join(os.path.dirname(OUT), 'seasons', 'index.html')
+    if os.path.exists(spage):
+        with open(spage, encoding='utf-8') as f:
+            html = f.read()
+        html = re.sub(r'(/eos/(?:data|history|season-menu)\.js\?v=)\d+', r'\g<1>' + stamp, html)
+        with open(spage, 'w', encoding='utf-8') as f:
             f.write(html)
     print(f'Wrote {OUT}: {len(lb_rows)} players, {len(m_rows)} maps, {len(teams)} teams')
     if added:

@@ -87,6 +87,8 @@ td.rk{color:var(--dim);width:56px}
 :root[data-theme="light"] td{border-bottom-color:rgba(120,96,60,.18)}
 :root[data-theme="light"] .eos-row td{background:rgba(194,65,12,.07)}
 :root[data-theme="light"] .up{color:#15803d} :root[data-theme="light"] .down{color:#be123c}
+.tabs button{flex-shrink:0;background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:600;padding:11px 14px 9px;cursor:pointer;white-space:nowrap}
+.tabs button:hover{color:var(--text)}
 </style>
 </head>
 <body>
@@ -95,7 +97,7 @@ td.rk{color:var(--dim);width:56px}
     <a class="home" href="/eos/" title="EOS 14 stats home"><img src="/eos/favicon.svg" alt="EOS" width="42" height="42"><span><span class="sb-title">Elisa Open Suomi 14</span><br><span class="sb-sub">Player &amp; team stats</span></span></a>
     <button type="button" class="theme-btn" id="themebtn" aria-label="Switch between dark and light theme"><span class="ti ti-moon" aria-hidden="true">☾</span><span class="ti ti-sun" aria-hidden="true">☀</span><span class="tl"></span></button>
   </div>
-  <nav class="tabs" aria-label="Pages"><div class="tabs-in"><a href="/eos/">← EOS 14 stats</a><a href="/eos/faceit/" class="on" aria-current="page">FACEIT ELO</a></div></nav>
+  <nav class="tabs" aria-label="Pages"><div class="tabs-in"><a href="/eos/">← EOS 14 stats</a><button type="button" id="seasons-btn">Past seasons<span class="car" aria-hidden="true">▾</span></button><a href="/eos/faceit/" class="on" aria-current="page">FACEIT ELO</a></div></nav>
 </div>
 <div class="wrap">
   <h1><svg class="flag" xmlns="http://www.w3.org/2000/svg" width="30" height="18" viewBox="0 0 18 11" aria-hidden="true"><rect width="18" height="11" fill="#fff"/><rect x="5" width="3" height="11" fill="#002f6c"/><rect y="4" width="18" height="3" fill="#002f6c"/></svg>FACEIT ELO · Finland</h1>
@@ -111,6 +113,8 @@ td.rk{color:var(--dim);width:56px}
   <div class="note" id="note"></div>
 </div>
 
+<script src="/eos/history.js?v=20261119122109"></script>
+<script src="/eos/season-menu.js?v=20261119122109"></script>
 <script src="/eos/faceit.js?v=20261119100110"></script>
 <script>
 (function () {
