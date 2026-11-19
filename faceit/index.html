@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="theme-color" content="#182839">
+<script>try{if(localStorage.getItem('eos-theme')==='light'){document.documentElement.setAttribute('data-theme','light');document.querySelector('meta[name=theme-color]').content='#efe6d4'}}catch(e){}</script>
 <title>FACEIT ELO Finland</title>
 <link rel="canonical" href="https://robujohnson.github.io/eos/faceit/">
 <link rel="icon" type="image/svg+xml" href="/eos/favicon.svg">
@@ -72,12 +73,27 @@ td.rk{color:var(--dim);width:56px}
   th,td{padding:8px 6px}
   .hide-sm{display:none}
 }
+.sitebar-in{justify-content:space-between}
+.theme-btn{display:inline-flex;align-items:center;gap:7px;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;flex-shrink:0}
+.theme-btn .ti{font-size:14px;line-height:1} .theme-btn .ti-sun{display:none} .theme-btn .tl::after{content:"Light"}
+:root[data-theme="light"] .theme-btn .ti-moon{display:none}
+:root[data-theme="light"] .theme-btn .ti-sun{display:inline}
+:root[data-theme="light"] .theme-btn .tl::after{content:"Dark"}
+:root[data-theme="light"]{color-scheme:light;--bg:#f2ebdd;--panel:rgba(253,250,243,.88);--panel2:#ece3d1;--line:#d8c9ae;--text:#2a2318;--muted:#6c604e;--dim:#9a8c74;--accent:#c2410c;--accent2:#b45309}
+:root[data-theme="light"] body::before{background:linear-gradient(135deg,#f6f0e4 0%,#ece2ce 50%,#f6f0e4 100%)}
+:root[data-theme="light"] .sitebar{background:#ece2cf;border-bottom-color:#d8c9ae}
+:root[data-theme="light"] .sb-title,:root[data-theme="light"] .tabs a.on,:root[data-theme="light"] .seg button.on{color:var(--text)}
+:root[data-theme="light"] .seg button.on{background:rgba(194,65,12,.12)}
+:root[data-theme="light"] td{border-bottom-color:rgba(120,96,60,.18)}
+:root[data-theme="light"] .eos-row td{background:rgba(194,65,12,.07)}
+:root[data-theme="light"] .up{color:#15803d} :root[data-theme="light"] .down{color:#be123c}
 </style>
 </head>
 <body>
 <div class="sitebar">
   <div class="sitebar-in">
     <a class="home" href="/eos/" title="EOS 14 stats home"><img src="/eos/favicon.svg" alt="EOS" width="42" height="42"><span><span class="sb-title">Elisa Open Suomi 14</span><br><span class="sb-sub">Player &amp; team stats</span></span></a>
+    <button type="button" class="theme-btn" id="themebtn" aria-label="Switch between dark and light theme"><span class="ti ti-moon" aria-hidden="true">☾</span><span class="ti ti-sun" aria-hidden="true">☀</span><span class="tl"></span></button>
   </div>
   <nav class="tabs" aria-label="Pages"><div class="tabs-in"><a href="/eos/">← EOS 14 stats</a><a href="/eos/faceit/" class="on" aria-current="page">FACEIT ELO</a></div></nav>
 </div>
@@ -126,6 +142,12 @@ td.rk{color:var(--dim);width:56px}
   }
   function teamLogo(t) { var s = logos[t]; return '<img src="' + (s ? '/eos/logos/' + esc(s) + '.png' : shield(t)) + '" alt="" loading="lazy">'; }
 
+  $('themebtn').addEventListener('click', function () {
+    var light = document.documentElement.getAttribute('data-theme') !== 'light';
+    if (light) document.documentElement.setAttribute('data-theme', 'light'); else document.documentElement.removeAttribute('data-theme');
+    var mc = document.querySelector('meta[name=theme-color]'); if (mc) mc.content = light ? '#efe6d4' : '#182839';
+    try { localStorage.setItem('eos-theme', light ? 'light' : 'dark'); } catch (e) {}
+  });
   if (!F) { $('list').innerHTML = '<div class="empty">FACEIT data hasn\u2019t been fetched yet. It updates once a day.</div>'; return; }
   $('sub').textContent = 'FACEIT CS2 ELO of Finnish players · updated ' + F.updated;
   var eosIds = {};

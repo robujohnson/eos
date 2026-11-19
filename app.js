@@ -1158,6 +1158,14 @@
     pool[Math.floor(Math.random() * pool.length)];
   renderCard(start);
 
+  // ---------- theme toggle (dark / light 'paper'); remembered per browser ----------
+  $('themebtn').addEventListener('click', function () {
+    var light = document.documentElement.getAttribute('data-theme') !== 'light';
+    if (light) document.documentElement.setAttribute('data-theme', 'light'); else document.documentElement.removeAttribute('data-theme');
+    var mc = document.querySelector('meta[name=theme-color]'); if (mc) mc.content = light ? '#efe6d4' : '#182839';
+    try { localStorage.setItem('eos-theme', light ? 'light' : 'dark'); } catch (e) { /* private mode etc. */ }
+  });
+
   // ---------- live stream / next match ----------
   // The Twitch player shows from 15 min before a match day's first match until 3 h after its last start.
   // Add ?live=1 to the URL to preview it.
