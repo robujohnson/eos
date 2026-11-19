@@ -492,21 +492,21 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
 .pc-logo{width:36px!important;height:36px!important}
 .card .pname{font-size:28px;font-style:italic;letter-spacing:.3px}
 .card .namebar{height:4px;margin:6px 0 10px;width:100%}
-.pc-mid{display:grid;grid-template-columns:150px 186px minmax(0,1fr);gap:14px;align-items:stretch}
-.pc-photo{position:relative;min-height:168px}
+.pc-mid{display:grid;grid-template-columns:150px 150px minmax(0,1fr);gap:16px;align-items:center}
+.pc-photo{position:relative;min-height:168px;align-self:stretch}
 .pc-photo .pphoto{right:auto;left:50%;transform:translateX(-50%);bottom:0;height:176px;max-width:160px}
-.pc-rate{display:flex!important;flex-direction:column;align-items:center;justify-content:center;padding:8px 6px!important;gap:4px!important}
-.pc-rate .gauge{width:150px}
-.pc-sides{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:4px}
-.pc-sides .side .v{font-size:17px}
-.pc-sides .side .l{font-size:9px;margin-top:2px!important}
-.pc-meta{align-content:center;font-size:13.5px;gap:5px 12px}
+.pc-rate .box{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),0 6px 18px rgba(0,0,0,.25)}
+.card .tile.pc-rate .pct{font-size:50px;font-style:italic;letter-spacing:-.5px}
+.card .pc-rate .lab{font-size:13px;font-weight:700;margin-bottom:5px}
+.pc-meta{align-content:center;font-size:14px;gap:6px 12px}
 .pc-meta dd{font-style:italic;font-weight:700}
 .pc-meta .mteam{cursor:pointer}
-.card .tiles{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px 10px;margin-top:14px}
-.card .tile .lab{font-style:italic;font-size:11.5px;margin-bottom:4px}
-.card .tile .box{aspect-ratio:1.12/1;display:flex;align-items:center;justify-content:center;padding:0;border-radius:6px}
-.card .tile .pct{font-size:clamp(18px,4.2vw,27px);font-style:italic}
+.pc-meta .sd-t{color:#fbbf24;font-size:16px;font-weight:800} .pc-meta .sd-ct{color:#60a5fa;font-size:16px;font-weight:800}
+:root[data-theme="light"] .pc-meta .sd-t{color:#b7791f} :root[data-theme="light"] .pc-meta .sd-ct{color:#2563eb}
+.card .tiles{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 12px;margin-top:16px}
+.card .tile .lab{font-style:italic;font-size:12px;margin-bottom:4px}
+.card .tiles .tile .box{aspect-ratio:1.45/1;display:flex;align-items:center;justify-content:center;padding:0;border-radius:6px}
+.card .tile .pct{font-size:clamp(20px,4.6vw,28px);font-style:italic}
 .card .guns{margin-top:14px}
 @media (max-width:1040px){
   .top-grid{grid-template-columns:minmax(0,1fr)}
@@ -518,11 +518,12 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
   .card{padding:12px}
   .card .pname{font-size:23px}
   .pc-logo{width:30px!important;height:30px!important}
-  .pc-mid{grid-template-columns:118px minmax(0,1fr);grid-template-areas:"photo rate" "meta meta";gap:10px}
+  .pc-mid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"photo rate" "meta meta";gap:10px 12px}
   .pc-photo{grid-area:photo;min-height:140px}
-  .pc-photo .pphoto{height:148px;max-width:130px}
-  .pc-rate{grid-area:rate}
-  .pc-meta{grid-area:meta;grid-template-columns:auto 1fr auto 1fr;font-size:12.5px}
+  .pc-photo .pphoto{height:150px;max-width:140px}
+  .pc-rate{grid-area:rate;max-width:150px;justify-self:center;width:100%}
+  .card .tile.pc-rate .pct{font-size:40px}
+  .pc-meta{grid-area:meta;grid-template-columns:auto 1fr;font-size:13.5px;gap:4px 14px;padding:0 6px}
   .card .tiles{gap:8px 6px}
   .card .tile .lab{font-size:9.5px;white-space:normal;line-height:1.1;min-height:2.2em;display:flex;align-items:flex-end;justify-content:center;letter-spacing:-.1px}
 }
@@ -530,7 +531,7 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
 </head>
 <body>
 <div class="sitebar"><div class="sitebar-in">
-  <a class="home" href="/eos/" title="EOS 14 stats home"><img src="/eos/favicon.svg" alt="EOS" width="42" height="42"><span><span class="sb-title">Elisa Open Suomi 14</span><br><span class="sb-sub">Player &amp; team stats</span></span></a>
+  <a class="home" href="/eos/" title="EOS 14 stats home"><img src="/eos/favicon.svg" alt="EOS" width="42" height="42"><span><span class="sb-title">Elisa Open Suomi</span><br><span class="sb-sub">Player &amp; team stats</span></span></a>
   <button type="button" class="theme-btn" id="themebtn" aria-label="Switch between dark and light theme"><span class="ti ti-moon" aria-hidden="true">☾</span><span class="ti ti-sun" aria-hidden="true">☀</span><span class="tl"></span></button>
 </div>
 <nav class="tabs" aria-label="Sections"><div class="tabs-in" id="tabs"><button type="button" data-target="player-section">Player</button><button type="button" data-target="sec-standings">Standings</button><button type="button" data-target="sec-leaderboard">Leaderboard</button><button type="button" data-target="sec-leaders">Stat leaders</button><button type="button" data-target="sec-impact">Impact map</button><button type="button" data-target="sec-upcoming">Upcoming</button><button type="button" data-target="sec-results">Results</button><button type="button" id="seasons-btn">Past seasons<span class="car" aria-hidden="true">▾</span></button><a class="tab-link" href="/eos/faceit/">FACEIT ELO <span aria-hidden="true">↗</span></a></div></nav>
@@ -550,11 +551,7 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
 
   <div class="top-grid">
   <section id="player-section" style="margin-top:8px">
-    <div class="picker">
-      <select id="picker" aria-label="Select player"></select>
-      <button class="nav-btn" id="prev" aria-label="Previous player">‹</button>
-      <button class="nav-btn" id="next" aria-label="Next player">›</button>
-    </div>
+    <h2>Player card</h2>
     <div class="panel card" id="card"></div>
   </section>
 
@@ -622,13 +619,13 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
 <div class="sb-overlay" id="tm" hidden role="dialog" aria-modal="true" aria-label="Team details"><div class="panel sb-panel" id="tm-body"></div></div>
 <div class="sb-overlay" id="sb" hidden role="dialog" aria-modal="true" aria-label="Match scoreboard"><div class="panel sb-panel" id="sb-body"></div></div>
 
-<script src="/eos/roles.js?v=20261119123329"></script>
-<script src="/eos/extra-results.js?v=20261119123329"></script>
-<script src="/eos/schedule.js?v=20261119123329"></script>
-<script src="/eos/history.js?v=20261119123329"></script>
-<script src="/eos/data.js?v=20261119123329"></script>
-<script src="/eos/season-menu.js?v=20261119123329"></script>
-<script src="/eos/app.js?v=20261119123329"></script>
+<script src="/eos/roles.js?v=20261119123932"></script>
+<script src="/eos/extra-results.js?v=20261119123932"></script>
+<script src="/eos/schedule.js?v=20261119123932"></script>
+<script src="/eos/history.js?v=20261119123932"></script>
+<script src="/eos/data.js?v=20261119123932"></script>
+<script src="/eos/season-menu.js?v=20261119123932"></script>
+<script src="/eos/app.js?v=20261119123932"></script>
 <script data-goatcounter="https://robu.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>

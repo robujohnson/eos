@@ -304,12 +304,10 @@
     { lab: 'Duel Swing', get: function (p) { return p.duelSwing; }, fmt: function (v) { return signedPct(v, 0) + ' /map'; } },
     { lab: 'Eco Swing', get: function (p) { return p.ecoSwing; }, fmt: function (v) { return signedPct(v, 1); } },
     { lab: 'Opening duels', get: function (p) { return p.open; }, fmt: function (v, p) { return pctS(v, 0) + (p.openAtt ? ' of ' + p.openAtt : ''); } },
-    { lab: 'Trade kills', get: function (p) { return p.tradeRd; }, fmt: function (v) { return fx(v, 2) + ' /rd'; } },
     { lab: 'Clutching', get: function (p) { return p.clutchSwing; }, fmt: function (v, p) { return (p.clutches != null ? p.clutches : 0) + '/' + (p.clutchAtt != null ? p.clutchAtt : '–') + ' won'; } },
     { lab: 'Multi-kills', get: function (p) { return p.mkRate; }, fmt: function (v) { return pctS(v, 0) + ' of rds'; } },
     { lab: 'Utility dmg', get: function (p) { return p.utilDmg; }, fmt: function (v) { return fx(v, 1) + ' /rd'; } },
-    { lab: 'Raw aim', get: function (p) { return p.rawAim; }, fmt: function (v, p) { return aimTip(p); }, html: true },
-    { lab: 'ADR', get: function (p) { return p.adr; }, fmt: function (v) { return fx(v, 1) + ' damage /rd'; } }
+    { lab: 'Raw aim', get: function (p) { return p.rawAim; }, fmt: function (v, p) { return aimTip(p); }, html: true }
   ];
 
   // ---------- SVG pieces ----------
@@ -354,30 +352,21 @@
       return '<div class="tile" data-tip="' + esc(tip) + '"><div class="lab">' + esc(t.lab) + '</div><div class="box" style="background:' + pctColor(pc) + '">' +
         '<div class="pct">' + (pc == null ? 'NA' : pc + '%') + '</div></div></div>';
     }).join('');
-    var hasSides = p.ct != null || p.t != null;
-    // T rating (yellow) left and CT rating (blue) right of the gauge; older sheets without them show Rating 2.0 and rank.
-    var left = hasSides
-      ? '<div class="side t"><div class="v">' + fx(p.t, 2) + '</div><div class="l"><i></i>T side</div></div>'
-      : '<div class="side"><div class="v" style="color:#fbbf24">' + fx(p.r2, 2) + '</div><div class="l">Rating 2.0</div></div>';
-    var right = hasSides
-      ? '<div class="side ct"><div class="v">' + fx(p.ct, 2) + '</div><div class="l"><i></i>CT side</div></div>'
-      : '<div class="side"><div class="v" style="color:#60a5fa">' + (rk ? '#' + rk : '–') + '</div><div class="l">' + (rk ? 'of ' + pool.length + ' players' : 'Not ranked') + '</div></div>';
     var photo = D.photos && D.photos[p.name];
-    var sides = hasSides
-      ? '<div class="pc-sides">' + left + right + '</div>'
-      : '<div class="pc-sides">' + left + right + '</div>';
+    var rpc = percentile(function (q) { return q.rating; }, p.rating);
+    var rtip = '<b>EOS Rating ' + fx(p.rating, 2) + '</b>' + (rpc == null ? '' : '<br><span class=\'dim\'>' + ordinal(rpc) + ' percentile among ' + MIN + '+ round players</span>');
     $('card').innerHTML =
       '<div class="pc-head"><span class="mteam" data-team="' + esc(p.team) + '" title="Team details">' + logo(p.team, 'pc-logo') + '</span><div class="pname">' + esc(p.name) + '</div></div>' +
       '<div class="namebar"></div>' +
       '<div class="pc-mid">' +
         '<div class="pc-photo">' + (photo ? '<img class="pphoto" src="/eos/logos/' + encodeURIComponent(photo) + '" alt="' + esc(p.name) + '">' : '<img class="pphoto sil" src="' + SILHOUETTE + '" alt="">') + '</div>' +
-        '<div class="headline pc-rate" style="--rc:' + ratingColor(p.rating) + '">' + gauge(p.rating) + sides + '</div>' +
+        '<div class="tile pc-rate" data-tip="' + esc(rtip) + '"><div class="lab">EOS Rating</div><div class="box" style="background:' + pctColor(rpc) + '"><div class="pct">' + fx(p.rating, 2) + '</div></div></div>' +
         '<dl class="meta pc-meta">' +
           '<dt>Team</dt><dd><span class="mteam" data-team="' + esc(p.team) + '" title="Team details">' + esc(p.team) + '</span></dd>' +
           '<dt>Role</dt><dd>' + esc(p.role || '–') + '</dd>' +
           '<dt>Rank</dt><dd>' + (rk ? '#' + rk + ' <span class="dim">of ' + pool.length + '</span>' : '<span class="dim">Not ranked</span>') + '</dd>' +
-          '<dt>Maps</dt><dd>' + (p.maps != null ? p.maps : '–') + ' <span class="dim">· ' + (p.rounds || 0) + ' rds</span></dd>' +
-          '<dt>K–D</dt><dd>' + (p.k != null ? p.k + '–' + p.d : '–') + '</dd>' +
+          (p.t != null ? '<dt>T side</dt><dd class="sd-t">' + fx(p.t, 2) + '</dd>' : '') +
+          (p.ct != null ? '<dt>CT side</dt><dd class="sd-ct">' + fx(p.ct, 2) + '</dd>' : '') +
         '</dl>' +
       '</div>' +
       '<div class="tiles">' + tiles + '</div>' +
@@ -386,7 +375,6 @@
         return '<span class="gun' + (low ? ' low' : '') + '" data-tip="' + esc(gunTip(g.k, o)) + '"><span class="gl">' + esc(g.short) + '</span>' +
           '<b style="color:' + (o ? gunColor(o.rating, low) : '#64748b') + '">' + (o ? o.rating.toFixed(2) : '–') + '</b><span class="gn">' + (o ? o.duels : 0) + ' duels</span></span>';
       }).join('') + '</div>' : '');
-    $('picker').value = p.name + '|' + p.team;
     document.querySelectorAll('#lb tbody tr').forEach(function (tr) { tr.classList.toggle('sel', tr.dataset.k === p.name + '|' + p.team); });
     renderScatter();
     try { history.replaceState(null, '', '#' + encodeURIComponent(p.name)); } catch (e) { /* ignore */ }
@@ -1142,15 +1130,8 @@
   });
   document.addEventListener('change', function (e) {
     if (e.target.id === 'showlow') { showLow = e.target.checked; renderTable(); }
-    if (e.target.id === 'picker') select(e.target.value, false);
     if (e.target.id === 'gunsel') { gunSel = e.target.value; sortKey = 'grat'; sortAsc = false; renderTable(); }
   });
-  function step(d) {
-    var i = ordered.indexOf(current);
-    renderCard(ordered[(i + d + ordered.length) % ordered.length]);
-  }
-  $('prev').onclick = function () { step(-1); };
-  $('next').onclick = function () { step(1); };
 
   var tip = $('tip');
   document.addEventListener('mousemove', function (e) {
@@ -1178,11 +1159,6 @@
   }
 
   // ---------- init ----------
-  $('picker').innerHTML = teams.map(function (t) {
-    return '<optgroup label="' + esc(t.name) + '">' + t.players.map(function (p) {
-      return '<option value="' + esc(p.name + '|' + p.team) + '">' + esc(p.name) + ' (' + fx(p.rating, 2) + ')</option>';
-    }).join('') + '</optgroup>';
-  }).join('');
   renderHeader(); renderStandings(); renderLeaders(); renderFilters(); renderTable(); renderTeamBars(); renderResults(); renderUpcoming(); renderGlossary(); renderHistory();
   var fromHash = decodeURIComponent((location.hash || '').slice(1)).toLowerCase();
   var start = players.filter(function (p) { return p.name.toLowerCase() === fromHash; })[0] ||
