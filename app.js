@@ -107,10 +107,12 @@
   //   Placement = crosshair placement (lower degrees = better)
   //   Precision = head accuracy, spray accuracy, accuracy with an enemy in sight
   //   Strafing  = counter-strafing
+  // Weighted 45% placement, 45% precision, 10% strafing: counter-strafing is movement
+  // discipline more than aim, so it only nudges the total.
   var AIM_PARTS = [
-    ['Placement', [['Aim|Crosshair placement (\u00b0)', -1]]],
-    ['Precision', [['Aim|Head accuracy', 1], ['Aim|Spray accuracy', 1], ['Aim|Accuracy (enemy spotted)', 1]]],
-    ['Strafing', [['Aim|Counter-strafing', 1]]]
+    ['Placement', [['Aim|Crosshair placement (\u00b0)', -1]], 0.45],
+    ['Precision', [['Aim|Head accuracy', 1], ['Aim|Spray accuracy', 1], ['Aim|Accuracy (enemy spotted)', 1]], 0.45],
+    ['Strafing', [['Aim|Counter-strafing', 1]], 0.10]
   ];
   (function () {
     function stats(vals) {
@@ -138,7 +140,7 @@
     players.forEach(function (p) {
       p.aimParts = p.aimParts.map(function (z, i) { return z == null || !parts[i] ? null : (z - parts[i].m) / parts[i].sd; });
       var have = p.aimParts.filter(function (z) { return z != null; });
-      p.aimRaw0 = have.length === AIM_PARTS.length ? have.reduce(function (a, b) { return a + b; }, 0) / have.length : null;
+      p.aimRaw0 = have.length === AIM_PARTS.length ? p.aimParts.reduce(function (a, z, i) { return a + z * AIM_PARTS[i][2]; }, 0) : null;
     });
     var tot = stats(pool.map(function (p) { return p.aimRaw0; }));
     players.forEach(function (p) { p.rawAim = p.aimRaw0 == null || !tot ? null : 1 + 0.1 * (p.aimRaw0 - tot.m) / tot.sd; });
@@ -222,7 +224,7 @@
     return '<b>' + p.rawAim.toFixed(2) + '</b> raw aim <span class=\'dim\'>(1.00 = league average, 0.10 = one step)</span>' +
       AIM_PARTS.map(function (part, i) {
         var z = p.aimParts[i];
-        return '<br>' + part[0] + ': ' + (z == null ? '–' : (z >= 0 ? '+' : '') + z.toFixed(2) + (p.aimRanks[i] && !p.low ? ' (#' + p.aimRanks[i] + ')' : ''));
+        return '<br>' + part[0] + ' <span class=\'dim\'>(' + Math.round(part[2] * 100) + '%)</span>: ' + (z == null ? '–' : (z >= 0 ? '+' : '') + z.toFixed(2) + (p.aimRanks[i] && !p.low ? ' (#' + p.aimRanks[i] + ')' : ''));
       }).join('');
   }
 
@@ -430,7 +432,7 @@
     { k: 'rank', lab: '#', get: null },
     { k: 'name', lab: 'Player', get: function (p) { return p.name.toLowerCase(); }, asc: true },
     { k: 'maps', lab: 'Maps', get: function (p) { return p.maps; } },
-    { k: 'aim', lab: 'Raw aim', title: 'Raw aim: 1.00 = league average, 0.10 = one standard deviation (placement + precision + strafing)', get: function (p) { return p.rawAim; }, hi: true,
+    { k: 'aim', lab: 'Raw aim', title: 'Raw aim: 1.00 = league average, 0.10 = one standard deviation (45% placement + 45% precision + 10% strafing)', get: function (p) { return p.rawAim; }, hi: true,
       cell: function (p) {
         var w = p.rawAim == null ? 0 : clamp((p.rawAim - 0.7) / 0.6, 0, 1) * 100;
         return '<span class="rbar"><b>' + fx(p.rawAim, 2) + '</b><i><s style="width:' + w.toFixed(1) + '%;background:' + (p.low ? '#475569' : p.rawAim >= 1.05 ? '#22c55e' : p.rawAim >= 0.95 ? '#f59e0b' : '#f43f5e') + '"></s></i></span>';
