@@ -20,9 +20,11 @@
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 html{background:var(--bg)}
-body{margin:0;min-height:100vh;color:var(--text);font:14px/1.45 var(--sans);
-  background:linear-gradient(135deg,rgb(24,40,57) 0%,rgb(34,55,77) 50%,rgb(24,40,57) 100%) fixed}
-.sitebar{background:rgba(24,40,57,.9);border-bottom:1px solid rgba(30,58,138,.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);position:sticky;top:0;z-index:20}
+body{margin:0;min-height:100vh;color:var(--text);font:14px/1.45 var(--sans);background:var(--bg)}
+/* gradient on its own fixed layer: the browser composites it instead of repainting the page on scroll */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(135deg,rgb(24,40,57) 0%,rgb(34,55,77) 50%,rgb(24,40,57) 100%)}
+.sitebar{background:rgb(24,40,57);border-bottom:1px solid rgba(30,58,138,.4);position:sticky;top:0;z-index:20}
 .tabs{border-top:1px solid rgba(30,58,138,.25)}
 .tabs-in{max-width:1180px;margin:0 auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .tabs-in::-webkit-scrollbar{display:none}
@@ -59,6 +61,12 @@ header.top > div:first-child{align-self:flex-start}
 @media (prefers-reduced-motion:reduce){.live-dot{animation:none}}
 .live-frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#000}
 .live-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.live-play{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;border:0;cursor:pointer;color:#fff;font:inherit;
+  background:radial-gradient(60% 70% at 50% 50%,rgba(145,70,255,.35),transparent 70%),#0b1220}
+.live-play .pb{width:64px;height:64px;border-radius:50%;background:#9146ff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(145,70,255,.45);transition:transform .15s}
+.live-play:hover .pb{transform:scale(1.06)}
+.live-play .pt{font-weight:700;font-size:14px}
+.live-play .ps{font-size:11.5px;color:var(--muted)}
 table.st{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
 .st th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;padding:10px 12px;text-align:right;border-bottom:1px solid var(--line);background:var(--panel2)}
 .st td{padding:9px 12px;text-align:right;border-bottom:1px solid rgba(51,65,85,.35)}
@@ -492,10 +500,10 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
 <div class="sb-overlay" id="tm" hidden role="dialog" aria-modal="true" aria-label="Team details"><div class="panel sb-panel" id="tm-body"></div></div>
 <div class="sb-overlay" id="sb" hidden role="dialog" aria-modal="true" aria-label="Match scoreboard"><div class="panel sb-panel" id="sb-body"></div></div>
 
-<script src="/eos/roles.js?v=20261119110035"></script>
-<script src="/eos/extra-results.js?v=20261119110035"></script>
-<script src="/eos/schedule.js?v=20261119110035"></script>
-<script src="/eos/data.js?v=20261119110035"></script>
-<script src="/eos/app.js?v=20261119110035"></script>
+<script src="/eos/roles.js?v=20261119110446"></script>
+<script src="/eos/extra-results.js?v=20261119110446"></script>
+<script src="/eos/schedule.js?v=20261119110446"></script>
+<script src="/eos/data.js?v=20261119110446"></script>
+<script src="/eos/app.js?v=20261119110446"></script>
 </body>
 </html>

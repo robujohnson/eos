@@ -202,6 +202,27 @@ def team_rounds(wb, team_of):
     return out
 
 
+# Columns the website actually reads (keeps data.js small). If app.js starts using another
+# Advanced or Per map column, add it here.
+ADV_KEEP = ['Player', 'Team',
+            'Aim|Accuracy (enemy spotted)', 'Aim|Counter-strafing', 'Aim|Crosshair placement (\u00b0)',
+            'Aim|Head accuracy', 'Aim|Spray accuracy',
+            'Closing|Clutch Swing', 'Closing|Clutch wins', 'Closing|Clutches',
+            'Firepower|Duel win%', 'Firepower|Duel win% over expected',
+            'Multi-kills|2K', 'Multi-kills|3K', 'Multi-kills|4K', 'Multi-kills|5K',
+            'Opening|Attempts', 'Opening|Opening Swing', 'Opening|Wins',
+            'Sniping|AWP kills%',
+            'Trading|Trade kill success%', 'Trading|Trade kills', 'Trading|Trade opportunities',
+            'Trading|Tradeable death%', 'Trading|Traded death success%',
+            'Utility (per round)|Flash assists', 'Utility (per round)|Utility dmg']
+PERMAP_KEEP = ['Match', 'Player', 'Team', 'Rounds', 'K', 'D', 'ADR', 'KAST', 'EOS Rating']
+
+
+def keep_cols(h, rows, keep):
+    idx = [h.index(c) for c in keep if c in h]
+    return {'h': [h[i] for i in idx], 'rows': [[r[i] for i in idx] for r in rows]}
+
+
 def norm_name(n):
     # Case-insensitive, and 0 == o (m0n0xx -> Monoxx.webp)
     return re.sub(r'[^a-z0-9]', '', str(n).lower()).replace('0', 'o')
@@ -261,10 +282,9 @@ def main():
         'manAdv': man_advantage(wb, {r[lb_h.index('Player')]: r[lb_h.index('Team')] for r in lb_rows}),
         'teamRounds': team_rounds(wb, {r[lb_h.index('Player')]: r[lb_h.index('Team')] for r in lb_rows}),
         'leaderboard': {'h': lb_h, 'rows': lb_rows},
-        'advanced': {'h': adv_h, 'rows': adv_rows},
-        'perMap': {'h': pm_h, 'rows': pm_rows},
+        'advanced': keep_cols(adv_h, adv_rows, ADV_KEEP),
+        'perMap': keep_cols(pm_h, pm_rows, PERMAP_KEEP),
         'matches': {'h': m_h, 'rows': m_rows},
-        'positions': {'h': pos_h, 'rows': pos_rows},
         'weapons': wpn,
         'glossary': glossary,
     }

@@ -1178,8 +1178,14 @@
     var sec = $('live'), frame = $('live-frame');
     if (live && sec.hidden) {
       var parents = [location.hostname, 'robujohnson.github.io'].filter(function (h, i, a) { return h && a.indexOf(h) === i; });
-      frame.innerHTML = '<iframe src="https://player.twitch.tv/?channel=' + CHANNEL + '&muted=true&autoplay=true' +
-        parents.map(function (h) { return '&parent=' + encodeURIComponent(h); }).join('') + '" allowfullscreen title="EOS 14 live on Twitch"></iframe>';
+      // The Twitch player is heavy (video decoding, hundreds of MB of memory), so it only loads on click.
+      var src = 'https://player.twitch.tv/?channel=' + CHANNEL + '&autoplay=true' +
+        parents.map(function (h) { return '&parent=' + encodeURIComponent(h); }).join('');
+      frame.innerHTML = '<button type="button" class="live-play" id="live-play"><span class="pb"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="#fff" d="M8 5v14l11-7z"/></svg></span>' +
+        '<span class="pt">Watch live</span><span class="ps">Loads the Twitch stream</span></button>';
+      $('live-play').addEventListener('click', function () {
+        frame.innerHTML = '<iframe src="' + src + '" allow="autoplay; fullscreen" allowfullscreen title="EOS 14 live on Twitch"></iframe>';
+      });
       sec.hidden = false;
     } else if (!live && !sec.hidden) {
       frame.innerHTML = ''; sec.hidden = true;
