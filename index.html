@@ -474,6 +474,25 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
 :root[data-theme="light"] .sb-close{color:var(--muted)}
 .tile .box{color:#fff}   /* percentile tiles keep white numbers on their coloured boxes in both themes */
 :root[data-theme="light"] .sb-tabs button:not(.maptab){text-shadow:none;color:var(--text)}
+.hs-top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;margin-bottom:12px}
+.hs-pick{display:inline-flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);font-weight:600}
+.hs-pick select{min-width:140px;font-weight:600}
+.hs-final{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:14px}
+.hs-final .win{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--text);background:rgba(250,204,21,.12);border:1px solid rgba(250,204,21,.35);border-radius:999px;padding:5px 14px 5px 10px}
+.hs-final .ru{color:var(--muted)} .hs-final .ru b{color:var(--text);font-weight:600}
+.hs-final .logo{width:20px;height:20px}
+table.lb.hs{min-width:480px}
+.hs-wrap{max-height:min(560px,70vh);overflow-y:auto;overscroll-behavior:contain}
+@media (max-width:600px){table.lb.hs{min-width:0;font-size:12px}.lb.hs th,.lb.hs td{padding:7px 5px}.lb.hs th{font-size:10px;letter-spacing:0}.lb.hs td:nth-child(2){white-space:normal}.lb.hs .tm .logo{display:none}}
+.lb.hs tbody tr{cursor:default} .lb.hs tbody tr.cur{cursor:pointer}
+.lb.hs .cur b{text-decoration:underline;text-decoration-color:rgba(249,115,22,.5);text-underline-offset:3px}
+.lb.hs .tm{display:inline-flex;align-items:center;gap:7px} .lb.hs .tm .logo{width:18px;height:18px}
+.hs-h3{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:22px 0 10px}
+.hs-champs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.hs-champs div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px}
+.hs-champs .n{display:block;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.04em}
+.hs-champs b{font-weight:700} .hs-champs .r{display:block;font-size:11.5px;color:var(--dim)}
+:root[data-theme="light"] .hs-final .win{background:rgba(202,138,4,.14);border-color:rgba(161,98,7,.4)}
 </style>
 </head>
 <body>
@@ -481,7 +500,7 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
   <a class="home" href="/eos/" title="EOS 14 stats home"><img src="/eos/favicon.svg" alt="EOS" width="42" height="42"><span><span class="sb-title">Elisa Open Suomi 14</span><br><span class="sb-sub">Player &amp; team stats</span></span></a>
   <button type="button" class="theme-btn" id="themebtn" aria-label="Switch between dark and light theme"><span class="ti ti-moon" aria-hidden="true">☾</span><span class="ti ti-sun" aria-hidden="true">☀</span><span class="tl"></span></button>
 </div>
-<nav class="tabs" aria-label="Sections"><div class="tabs-in" id="tabs"><button type="button" data-target="player-section">Player</button><button type="button" data-target="sec-leaderboard">Leaderboard</button><button type="button" data-target="sec-leaders">Stat leaders</button><button type="button" data-target="sec-impact">Impact map</button><button type="button" data-target="sec-standings">Standings</button><button type="button" data-target="sec-upcoming">Upcoming</button><button type="button" data-target="sec-results">Results</button><a class="tab-link" href="/eos/faceit/">FACEIT ELO <span aria-hidden="true">↗</span></a></div></nav>
+<nav class="tabs" aria-label="Sections"><div class="tabs-in" id="tabs"><button type="button" data-target="player-section">Player</button><button type="button" data-target="sec-leaderboard">Leaderboard</button><button type="button" data-target="sec-leaders">Stat leaders</button><button type="button" data-target="sec-impact">Impact map</button><button type="button" data-target="sec-standings">Standings</button><button type="button" data-target="sec-upcoming">Upcoming</button><button type="button" data-target="sec-results">Results</button><button type="button" data-target="sec-history">Past seasons</button><a class="tab-link" href="/eos/faceit/">FACEIT ELO <span aria-hidden="true">↗</span></a></div></nav>
 </div>
 <div class="wrap">
   <header class="top">
@@ -548,6 +567,18 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
     <div class="results" id="results"></div>
   </section>
 
+  <section id="sec-history">
+    <h2>Previous seasons</h2>
+    <div class="hs-top">
+      <label class="hs-pick">Season <select id="hs-season" aria-label="Choose a previous season"></select></label>
+      <div class="hs-final" id="hs-final"></div>
+    </div>
+    <div class="panel tablewrap hs-wrap"><table class="lb hs" id="hs-table"></table></div>
+    <div class="st-note">Rating is HLTV 2.0. Players with fewer than 5 matches are dimmed. Click a column to sort; click a player who plays this season to open their EOS 14 card.</div>
+    <h3 class="hs-h3">EOS champions</h3>
+    <div class="hs-champs" id="hs-champs"></div>
+  </section>
+
   <section>
     <details class="panel gl">
       <summary>How the stats are calculated</summary>
@@ -562,11 +593,12 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
 <div class="sb-overlay" id="tm" hidden role="dialog" aria-modal="true" aria-label="Team details"><div class="panel sb-panel" id="tm-body"></div></div>
 <div class="sb-overlay" id="sb" hidden role="dialog" aria-modal="true" aria-label="Match scoreboard"><div class="panel sb-panel" id="sb-body"></div></div>
 
-<script src="/eos/roles.js?v=20261119112618"></script>
-<script src="/eos/extra-results.js?v=20261119112618"></script>
-<script src="/eos/schedule.js?v=20261119112618"></script>
-<script src="/eos/data.js?v=20261119112618"></script>
-<script src="/eos/app.js?v=20261119112618"></script>
+<script src="/eos/roles.js?v=20261119121412"></script>
+<script src="/eos/extra-results.js?v=20261119121412"></script>
+<script src="/eos/schedule.js?v=20261119121412"></script>
+<script src="/eos/history.js?v=20261119121412"></script>
+<script src="/eos/data.js?v=20261119121412"></script>
+<script src="/eos/app.js?v=20261119121412"></script>
 <script data-goatcounter="https://robu.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>
