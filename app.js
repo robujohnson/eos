@@ -308,7 +308,8 @@
     { lab: 'Clutching', get: function (p) { return p.clutchSwing; }, fmt: function (v, p) { return (p.clutches != null ? p.clutches : 0) + '/' + (p.clutchAtt != null ? p.clutchAtt : '–') + ' won'; } },
     { lab: 'Multi-kills', get: function (p) { return p.mkRate; }, fmt: function (v) { return pctS(v, 0) + ' of rds'; } },
     { lab: 'Utility dmg', get: function (p) { return p.utilDmg; }, fmt: function (v) { return fx(v, 1) + ' /rd'; } },
-    { lab: 'Raw aim', get: function (p) { return p.rawAim; }, fmt: function (v, p) { return aimTip(p); }, html: true }
+    { lab: 'Raw aim', get: function (p) { return p.rawAim; }, fmt: function (v, p) { return aimTip(p); }, html: true },
+    { lab: 'ADR', get: function (p) { return p.adr; }, fmt: function (v) { return fx(v, 1) + ' damage /rd'; } }
   ];
 
   // ---------- SVG pieces ----------
@@ -362,24 +363,29 @@
       ? '<div class="side ct"><div class="v">' + fx(p.ct, 2) + '</div><div class="l"><i></i>CT side</div></div>'
       : '<div class="side"><div class="v" style="color:#60a5fa">' + (rk ? '#' + rk : '–') + '</div><div class="l">' + (rk ? 'of ' + pool.length + ' players' : 'Not ranked') + '</div></div>';
     var photo = D.photos && D.photos[p.name];
+    var sides = hasSides
+      ? '<div class="pc-sides">' + left + right + '</div>'
+      : '<div class="pc-sides">' + left + right + '</div>';
     $('card').innerHTML =
-      '<div class="card-left"><div class="idblock">' +
-        (photo ? '<img class="pphoto" src="/eos/logos/' + encodeURIComponent(photo) + '" alt="' + esc(p.name) + '">' : '<img class="pphoto sil" src="' + SILHOUETTE + '" alt="">') +
-        '<div class="pname">' + esc(p.name) + '</div><div class="namebar"></div>' +
-        '<dl class="meta"><dt>Team</dt><dd><span class="mteam" data-team="' + esc(p.team) + '" title="Team details">' + logo(p.team) + esc(p.team) + '</span></dd><dt>Role</dt><dd>' + esc(p.role || '–') + '</dd></dl></div>' +
-        '<div class="headline" style="--rc:' + ratingColor(p.rating) + '">' +
-          left +
-          '<div style="text-align:center">' + gauge(p.rating) + '</div>' + right +
-        '</div>' +
+      '<div class="pc-head"><span class="mteam" data-team="' + esc(p.team) + '" title="Team details">' + logo(p.team, 'pc-logo') + '</span><div class="pname">' + esc(p.name) + '</div></div>' +
+      '<div class="namebar"></div>' +
+      '<div class="pc-mid">' +
+        '<div class="pc-photo">' + (photo ? '<img class="pphoto" src="/eos/logos/' + encodeURIComponent(photo) + '" alt="' + esc(p.name) + '">' : '<img class="pphoto sil" src="' + SILHOUETTE + '" alt="">') + '</div>' +
+        '<div class="headline pc-rate" style="--rc:' + ratingColor(p.rating) + '">' + gauge(p.rating) + sides + '</div>' +
+        '<dl class="meta pc-meta">' +
+          '<dt>Team</dt><dd><span class="mteam" data-team="' + esc(p.team) + '" title="Team details">' + esc(p.team) + '</span></dd>' +
+          '<dt>Role</dt><dd>' + esc(p.role || '–') + '</dd>' +
+          '<dt>Rank</dt><dd>' + (rk ? '#' + rk + ' <span class="dim">of ' + pool.length + '</span>' : '<span class="dim">Not ranked</span>') + '</dd>' +
+          '<dt>Maps</dt><dd>' + (p.maps != null ? p.maps : '–') + ' <span class="dim">· ' + (p.rounds || 0) + ' rds</span></dd>' +
+          '<dt>K–D</dt><dd>' + (p.k != null ? p.k + '–' + p.d : '–') + '</dd>' +
+        '</dl>' +
       '</div>' +
-      '<div class="card-right">' +
-        '<div class="tiles">' + tiles + '</div>' +
-        (HAS_GUNS ? '<div class="guns"><span class="guns-l" title="EOS rating adjusted by how his duels with each gun compare with his duels overall">Guns <span>· EOS rating with each gun</span></span>' + GUN_GROUPS.map(function (g) {
-          var o = gunStat(p, g.k), low = !o || o.duels < GUN_MIN;
-          return '<span class="gun' + (low ? ' low' : '') + '" data-tip="' + esc(gunTip(g.k, o)) + '"><span class="gl">' + esc(g.short) + '</span>' +
-            '<b style="color:' + (o ? gunColor(o.rating, low) : '#64748b') + '">' + (o ? o.rating.toFixed(2) : '–') + '</b><span class="gn">' + (o ? o.duels : 0) + ' duels</span></span>';
-        }).join('') + '</div>' : '') +
-      '</div>';
+      '<div class="tiles">' + tiles + '</div>' +
+      (HAS_GUNS ? '<div class="guns"><span class="guns-l" title="EOS rating adjusted by how their duels with each gun compare with their duels overall">Guns <span>· EOS rating with each gun</span></span>' + GUN_GROUPS.map(function (g) {
+        var o = gunStat(p, g.k), low = !o || o.duels < GUN_MIN;
+        return '<span class="gun' + (low ? ' low' : '') + '" data-tip="' + esc(gunTip(g.k, o)) + '"><span class="gl">' + esc(g.short) + '</span>' +
+          '<b style="color:' + (o ? gunColor(o.rating, low) : '#64748b') + '">' + (o ? o.rating.toFixed(2) : '–') + '</b><span class="gn">' + (o ? o.duels : 0) + ' duels</span></span>';
+      }).join('') + '</div>' : '');
     $('picker').value = p.name + '|' + p.team;
     document.querySelectorAll('#lb tbody tr').forEach(function (tr) { tr.classList.toggle('sel', tr.dataset.k === p.name + '|' + p.team); });
     renderScatter();
