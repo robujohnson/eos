@@ -556,21 +556,31 @@
     var W = 640, H = 430, L = 50, R = 16, T = 16, B = 44;
     var xs = players.map(function (p) { return p.duelSwing; }).filter(function (v) { return v != null; });
     var ys = players.map(function (p) { return p.roundSwing; }).filter(function (v) { return v != null; });
-    var xa = Math.max(Math.abs(Math.min.apply(null, xs)), Math.abs(Math.max.apply(null, xs))) * 1.1;
-    var ya = Math.max(Math.abs(Math.min.apply(null, ys)), Math.abs(Math.max.apply(null, ys))) * 1.1;
-    function X(v) { return L + (v + xa) / (2 * xa) * (W - L - R); }
-    function Y(v) { return T + (ya - v) / (2 * ya) * (H - T - B); }
+    // zoom to the data (always keeping 0 in view) instead of a symmetric range around 0
+    function range(a) {
+      var lo = Math.min(0, Math.min.apply(null, a)), hi = Math.max(0, Math.max.apply(null, a)), pad = (hi - lo) * 0.08;
+      return [lo - pad, hi + pad];
+    }
+    var xr = range(xs), yr = range(ys), xa = (xr[1] - xr[0]) / 2, ya = (yr[1] - yr[0]) / 2;
+    function X(v) { return L + (v - xr[0]) / (xr[1] - xr[0]) * (W - L - R); }
+    function Y(v) { return T + (yr[1] - v) / (yr[1] - yr[0]) * (H - T - B); }
     var g = '<rect x="' + X(0) + '" y="' + T + '" width="' + (W - R - X(0)) + '" height="' + (Y(0) - T) + '" fill="rgba(56,189,248,.05)"/>' +
       '<rect x="' + L + '" y="' + Y(0) + '" width="' + (X(0) - L) + '" height="' + (H - B - Y(0)) + '" fill="rgba(244,63,94,.05)"/>' +
       '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="#334155"/>' +
       '<line x1="' + X(0) + '" x2="' + X(0) + '" y1="' + T + '" y2="' + (H - B) + '" stroke="#334155"/>';
     var xStep = xa > 2.5 ? 1 : 0.5, yStep = ya > 0.06 ? 0.02 : 0.01;
-    for (var v = -Math.floor(xa / xStep) * xStep; v <= xa; v += xStep) g += '<text x="' + X(v) + '" y="' + (H - B + 16) + '" text-anchor="middle" font-size="10" fill="#5d6c87">' + signedPct(v, 0) + '</text>';
-    for (var u = -Math.floor(ya / yStep) * yStep; u <= ya + 1e-9; u += yStep) g += '<text x="' + (L - 6) + '" y="' + (Y(u) + 3) + '" text-anchor="end" font-size="10" fill="#5d6c87">' + signedPct(u, 0) + '</text>';
+    for (var v = Math.ceil(xr[0] / xStep) * xStep; v <= xr[1] + 1e-9; v += xStep) g += '<text x="' + X(v) + '" y="' + (H - B + 16) + '" text-anchor="middle" font-size="10" fill="#5d6c87">' + signedPct(v, 0) + '</text>';
+    for (var u = Math.ceil(yr[0] / yStep) * yStep; u <= yr[1] + 1e-9; u += yStep) g += '<text x="' + (L - 6) + '" y="' + (Y(u) + 3) + '" text-anchor="end" font-size="10" fill="#5d6c87">' + signedPct(u, 0) + '</text>';
     g += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="11" fill="#38bdf8">Duel Swing per map → wins fights beyond expectation</text>' +
       '<text transform="translate(13 ' + ((T + H - B) / 2) + ') rotate(-90)" text-anchor="middle" font-size="11" fill="#cbd5e1">Round Swing per round → impact on winning rounds</text>' +
-      '<text x="' + (W - R - 6) + '" y="' + (T + 14) + '" text-anchor="end" font-size="10.5" fill="#38bdf8" opacity=".8">Wins duels &amp; rounds</text>' +
-      '<text x="' + (L + 6) + '" y="' + (H - B - 8) + '" font-size="10.5" fill="#f43f5e" opacity=".8">Struggling</text>';
+      quad(W - R - 6, T + 14, 'end', '#38bdf8', 'Difference makers', 'wins duels &amp; rounds') +
+      quad(L + 6, T + 14, 'start', '#fbbf24', 'Glue players', 'loses duels, still wins rounds') +
+      quad(W - R - 6, H - B - 20, 'end', '#a78bfa', 'Empty duels', 'wins fights, rounds don’t follow') +
+      quad(L + 6, H - B - 20, 'start', '#f43f5e', 'Struggling', 'loses duels &amp; rounds');
+    function quad(x, y, anchor, col, title, sub) {
+      return '<text x="' + x + '" y="' + y + '" text-anchor="' + anchor + '" font-size="11" font-weight="700" fill="' + col + '" opacity=".85" pointer-events="none">' + title + '</text>' +
+        '<text x="' + x + '" y="' + (y + 12) + '" text-anchor="' + anchor + '" font-size="9.5" fill="#8a9ab3" pointer-events="none">' + sub + '</text>';
+    }
     var labelled = pool.slice().sort(function (a, b) { return b.rating - a.rating; }).slice(0, 6);
     var marks = '', labels = '';
     players.forEach(function (p) {
