@@ -6,6 +6,7 @@
 <!-- Kept out of search engines; shared by link. -->
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="theme-color" content="#182839">
+<script>try{if(localStorage.getItem('eos-theme')==='light'){document.documentElement.setAttribute('data-theme','light');document.querySelector('meta[name=theme-color]').content='#efe6d4'}}catch(e){}</script>
 <title>EOS 14 Stats</title>
 <link rel="canonical" href="https://robujohnson.github.io/eos/">
 <link rel="icon" type="image/svg+xml" href="/eos/favicon.svg">
@@ -413,13 +414,74 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
   .st .pl{gap:6px}
   .st .pl .logo{width:20px;height:20px}
 }
+
+/* ---------- theme toggle + light 'paper' theme ---------- */
+.theme-btn{display:inline-flex;align-items:center;gap:7px;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;flex-shrink:0}
+.theme-btn:hover{border-color:rgba(249,115,22,.6)}
+.theme-btn .ti{font-size:14px;line-height:1}
+.theme-btn .ti-sun{display:none}
+.theme-btn .tl::after{content:"Light"}
+:root[data-theme="light"] .theme-btn .ti-moon{display:none}
+:root[data-theme="light"] .theme-btn .ti-sun{display:inline}
+:root[data-theme="light"] .theme-btn .tl::after{content:"Dark"}
+
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f2ebdd; --panel:rgba(253,250,243,.88); --panel2:#ece3d1; --line:#d8c9ae; --text:#2a2318; --muted:#6c604e; --dim:#9a8c74;
+  --accent:#c2410c; --accent2:#b45309; --good:#15803d; --bad:#be123c;
+}
+:root[data-theme="light"] body::before{background:linear-gradient(135deg,#f6f0e4 0%,#ece2ce 50%,#f6f0e4 100%)}
+:root[data-theme="light"] .sitebar{background:#ece2cf;border-bottom-color:#d8c9ae}
+:root[data-theme="light"] .tabs{border-top-color:#ddd0b8}
+:root[data-theme="light"] .tabs button.on,
+:root[data-theme="light"] .tabs .tab-link:hover,
+:root[data-theme="light"] .sb-title,
+:root[data-theme="light"] h2,
+:root[data-theme="light"] .fbtn.adv.on,
+:root[data-theme="light"] .sb-close:hover,
+:root[data-theme="light"] .sb-tabs button.on{color:var(--text)}
+:root[data-theme="light"] .tile .lab,
+:root[data-theme="light"] .gun .gl,
+:root[data-theme="light"] .gl dd{color:#4a4031}
+:root[data-theme="light"] .headline{background:radial-gradient(120% 140% at 50% 115%,color-mix(in srgb,var(--rc) 18%,transparent),transparent 62%),linear-gradient(180deg,#fbf7ee,#efe6d3)!important}
+:root[data-theme="light"] .side.t .v,:root[data-theme="light"] .side.t .l i{color:#b7791f}
+:root[data-theme="light"] .side.t .l i{background:#b7791f}
+:root[data-theme="light"] .side.ct .v{color:#2563eb}
+:root[data-theme="light"] .side.ct .l i{background:#2563eb}
+:root[data-theme="light"] .gauge text{fill:var(--muted)}
+:root[data-theme="light"] .gauge text[font-weight="800"]{fill:var(--text)}
+:root[data-theme="light"] .gauge path[stroke^="rgba(51,65,85"]{stroke:#d9ccb3}
+:root[data-theme="light"] .st td,:root[data-theme="light"] .lb td,:root[data-theme="light"] .sb td{border-bottom-color:rgba(120,96,60,.18)}
+:root[data-theme="light"] .tm-stat .rk.top,:root[data-theme="light"] .br-row.win .s,:root[data-theme="light"] .tm-res.w,
+:root[data-theme="light"] .mp-ms .w,:root[data-theme="light"] .sbt-head.win .sbt-score{color:#15803d}
+:root[data-theme="light"] .tm-stat .rk.bot,:root[data-theme="light"] .br-row.lose .s,:root[data-theme="light"] .tm-res.l,
+:root[data-theme="light"] .mp-ms .l,:root[data-theme="light"] .sbt-head.loss .sbt-score{color:#be123c}
+:root[data-theme="light"] .foot.nodemo,:root[data-theme="light"] .sdate .nd{color:#b45309}
+:root[data-theme="light"] .mp-bar,:root[data-theme="light"] .br-ph{background:rgba(110,90,55,.14)}
+:root[data-theme="light"] .br-row .s{background:rgba(110,90,55,.07)}
+:root[data-theme="light"] .br-lines path{stroke:rgba(110,90,55,.45)}
+:root[data-theme="light"] .sb-overlay{background:rgba(70,55,30,.35)}
+:root[data-theme="light"] .sb-panel{background:#faf6ec;box-shadow:0 20px 50px rgba(80,60,30,.25)}
+:root[data-theme="light"] .tip{background:#fffaf0;color:var(--text);box-shadow:0 8px 24px rgba(80,60,30,.2)}
+:root[data-theme="light"] .lb tr.sel{background:rgba(194,65,12,.10)}
+:root[data-theme="light"] .lb tbody tr:hover{background:rgba(194,65,12,.06)}
+:root[data-theme="light"] .lb td.top1{background:rgba(194,65,12,.22)}
+:root[data-theme="light"] .lb td.top2{background:rgba(194,65,12,.14)}
+:root[data-theme="light"] .lb td.top3{background:rgba(194,65,12,.07)}
+:root[data-theme="light"] .fbtn.on{background:rgba(194,65,12,.12);border-color:rgba(194,65,12,.5)}
+:root[data-theme="light"] #scatter svg text,:root[data-theme="light"] #teambars svg text{fill:#4a4031}
+:root[data-theme="light"] #scatter svg line,:root[data-theme="light"] #teambars svg line{stroke:#cbbb9d}
+:root[data-theme="light"] .sb-close{color:var(--muted)}
+.tile .box{color:#fff}   /* percentile tiles keep white numbers on their coloured boxes in both themes */
+:root[data-theme="light"] .sb-tabs button:not(.maptab){text-shadow:none;color:var(--text)}
 </style>
 </head>
 <body>
 <div class="sitebar"><div class="sitebar-in">
   <a class="home" href="/eos/" title="EOS 14 stats home"><img src="/eos/favicon.svg" alt="EOS" width="42" height="42"><span><span class="sb-title">Elisa Open Suomi 14</span><br><span class="sb-sub">Player &amp; team stats</span></span></a>
+  <button type="button" class="theme-btn" id="themebtn" aria-label="Switch between dark and light theme"><span class="ti ti-moon" aria-hidden="true">☾</span><span class="ti ti-sun" aria-hidden="true">☀</span><span class="tl"></span></button>
 </div>
-<nav class="tabs" aria-label="Sections"><div class="tabs-in" id="tabs"><button type="button" data-target="player-section">Player</button><button type="button" data-target="sec-leaderboard">Leaderboard</button><button type="button" data-target="sec-leaders">Stat leaders</button><button type="button" data-target="sec-impact">Impact map</button><button type="button" data-target="sec-standings">Standings</button><button type="button" data-target="sec-results">Results</button><button type="button" data-target="sec-upcoming">Upcoming</button><a class="tab-link" href="/eos/faceit/">FACEIT ELO <span aria-hidden="true">↗</span></a></div></nav>
+<nav class="tabs" aria-label="Sections"><div class="tabs-in" id="tabs"><button type="button" data-target="player-section">Player</button><button type="button" data-target="sec-leaderboard">Leaderboard</button><button type="button" data-target="sec-leaders">Stat leaders</button><button type="button" data-target="sec-impact">Impact map</button><button type="button" data-target="sec-standings">Standings</button><button type="button" data-target="sec-upcoming">Upcoming</button><button type="button" data-target="sec-results">Results</button><a class="tab-link" href="/eos/faceit/">FACEIT ELO <span aria-hidden="true">↗</span></a></div></nav>
 </div>
 <div class="wrap">
   <header class="top">
@@ -475,15 +537,15 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
     <div class="st-note">Matches are BO3. Top 4 above the dashed line make the playoffs.</div></div>
   </section>
 
-  <section id="sec-results">
-    <h2>Results</h2>
-    <div class="results" id="results"></div>
-  </section>
-
   <section id="sec-upcoming">
     <h2>Upcoming matches</h2>
     <div id="upcoming"></div>
     <div class="st-note">All times are Finnish time (EET). Matches are BO3.</div>
+  </section>
+
+  <section id="sec-results">
+    <h2>Results</h2>
+    <div class="results" id="results"></div>
   </section>
 
   <section>
@@ -500,10 +562,10 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
 <div class="sb-overlay" id="tm" hidden role="dialog" aria-modal="true" aria-label="Team details"><div class="panel sb-panel" id="tm-body"></div></div>
 <div class="sb-overlay" id="sb" hidden role="dialog" aria-modal="true" aria-label="Match scoreboard"><div class="panel sb-panel" id="sb-body"></div></div>
 
-<script src="/eos/roles.js?v=20261119110446"></script>
-<script src="/eos/extra-results.js?v=20261119110446"></script>
-<script src="/eos/schedule.js?v=20261119110446"></script>
-<script src="/eos/data.js?v=20261119110446"></script>
-<script src="/eos/app.js?v=20261119110446"></script>
+<script src="/eos/roles.js?v=20261119111130"></script>
+<script src="/eos/extra-results.js?v=20261119111130"></script>
+<script src="/eos/schedule.js?v=20261119111130"></script>
+<script src="/eos/data.js?v=20261119111130"></script>
+<script src="/eos/app.js?v=20261119111130"></script>
 </body>
 </html>
