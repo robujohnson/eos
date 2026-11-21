@@ -634,15 +634,66 @@
       st[A].mw += wa; st[A].ml += wb; st[B].mw += wb; st[B].ml += wa;
       if (wa > wb) { st[A].w++; st[B].l++; } else if (wb > wa) { st[B].w++; st[A].l++; }
     });
-    var rd = {}; teams.forEach(function (t) { rd[t.name] = t.rw - t.rl; });
-    var list = Object.keys(st).map(function (k) { return st[k]; }).sort(function (a, b) {
-      return (b.w - a.w) || (a.l - b.l) || ((b.mw - b.ml) - (a.mw - a.ml)) || ((rd[b.name] || 0) - (rd[a.name] || 0)) || a.name.localeCompare(b.name);
+    // Ranking: win-loss difference, then the rulebook tiebreakers (7.10.7 Tiebreakers in Round Robin).
+    // Overtime maps count as 13:12 for the winner. Whenever a step splits the tied teams, each group
+    // that is still tied is compared again from step 1.
+    var games = Object.keys(bySeries).map(function (k) {
+      var ms = bySeries[k], A = ms[0].a, B = ms[0].b;
+      return { A: A, B: B, maps: ms.map(function (m) {
+        var x = m.a === A ? m.as : m.bs, y = m.a === A ? m.bs : m.as;
+        if (Math.max(x, y) > 13) { x = x > y ? 13 : 12; y = 13 + 12 - x; }   // overtime -> 13:12
+        return [x, y];
+      }) };
     });
+    function tally(t, among) {
+      var o = { pts: 0, md: 0, mw: 0, rd: 0, rw: 0 };
+      games.forEach(function (g) {
+        var me = g.A === t ? 0 : g.B === t ? 1 : -1; if (me < 0) return;
+        var opp = me === 0 ? g.B : g.A; if (among && among.indexOf(opp) < 0) return;
+        var mw = 0, ml = 0;
+        g.maps.forEach(function (sc) { var f = sc[me], a2 = sc[1 - me]; f > a2 ? mw++ : ml++; o.rw += f; o.rd += f - a2; });
+        o.mw += mw; o.md += mw - ml; if (mw > ml) o.pts++;
+      });
+      return o;
+    }
+    var TB = [
+      ['head-to-head result', function (t, g) { return tally(t, g).pts; }],
+      ['head-to-head map difference', function (t, g) { return tally(t, g).md; }],
+      ['head-to-head maps won', function (t, g) { return tally(t, g).mw; }],
+      ['overall map difference', function (t) { return tally(t).md; }],
+      ['overall maps won', function (t) { return tally(t).mw; }],
+      ['head-to-head round difference', function (t, g) { return tally(t, g).rd; }],
+      ['head-to-head rounds won', function (t, g) { return tally(t, g).rw; }],
+      ['overall round difference', function (t) { return tally(t).rd; }],
+      ['overall rounds won', function (t) { return tally(t).rw; }]
+    ];
+    var tbNote = {};
+    function breakTie(group) {
+      if (group.length < 2) return group;
+      for (var i = 0; i < TB.length; i++) {
+        var val = {}; group.forEach(function (t) { val[t] = TB[i][1](t, group); });
+        var levels = group.map(function (t) { return val[t]; }).filter(function (v, j, arr) { return arr.indexOf(v) === j; }).sort(function (x, y) { return y - x; });
+        if (levels.length < 2) continue;
+        var others = group.length === 2 ? null : group.length + ' teams';
+        group.forEach(function (t) {
+          var rest = group.filter(function (u) { return u !== t; });
+          tbNote[t] = 'Tied on wins with ' + (others ? rest.join(', ') : rest[0]) + ' – decided by ' + TB[i][0];
+        });
+        return [].concat.apply([], levels.map(function (v) { return breakTie(group.filter(function (t) { return val[t] === v; })); }));
+      }
+      group.forEach(function (t) { tbNote[t] = 'Still tied after all tiebreakers – decided by overtime'; });
+      return group.slice().sort(function (x, y) { return x.localeCompare(y); });
+    }
+    var byDiff = {};
+    Object.keys(st).forEach(function (k) { var d = st[k].w - st[k].l; (byDiff[d] = byDiff[d] || []).push(k); });
+    var list = [].concat.apply([], Object.keys(byDiff).map(Number).sort(function (x, y) { return y - x; }).map(function (d) {
+      return breakTie(byDiff[d].sort(function (x, y) { return x.localeCompare(y); }));
+    })).map(function (k) { return st[k]; });
     list.forEach(function (t, i) { standingsPos[t.name] = { pos: i + 1, w: t.w, l: t.l }; });
     $('standings').innerHTML = '<thead><tr><th>#</th><th>Team</th><th>Matches</th><th>Won</th><th>Lost</th><th title="Maps won–lost">Maps</th></tr></thead><tbody>' +
       list.map(function (t, i) {
-        return '<tr data-team="' + esc(t.name) + '" title="Team details"' + (i === PLAYOFF_SPOTS - 1 && list.length > PLAYOFF_SPOTS ? ' class="cut"' : '') + '><td class="dim">' + (i + 1) + '</td>' +
-          '<td><span class="pl">' + logo(t.name) + '<b>' + esc(t.name) + '</b></span></td>' +
+        return '<tr data-team="' + esc(t.name) + '" title="' + esc(tbNote[t.name] ? tbNote[t.name] + '. Click for team details' : 'Team details') + '"' + (i === PLAYOFF_SPOTS - 1 && list.length > PLAYOFF_SPOTS ? ' class="cut"' : '') + '><td class="dim">' + (i + 1) + '</td>' +
+          '<td><span class="pl">' + logo(t.name) + '<b>' + esc(t.name) + '</b>' + (tbNote[t.name] ? '<span class="tb" aria-label="' + esc(tbNote[t.name]) + '">TB</span>' : '') + '</span></td>' +
           '<td>' + (t.w + t.l) + '</td><td class="pos-v">' + t.w + '</td><td class="neg-v">' + t.l + '</td>' +
           '<td class="dim">' + t.mw + '–' + t.ml + '</td></tr>';
       }).join('') + '</tbody>';
