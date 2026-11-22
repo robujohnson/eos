@@ -16,6 +16,7 @@ in the spreadsheet don't break anything.
 """
 
 import json
+import math
 import os
 import re
 import sys
@@ -223,6 +224,26 @@ def keep_cols(h, rows, keep):
     return {'h': [h[i] for i in idx], 'rows': [[r[i] for i in idx] for r in rows]}
 
 
+def soften_map(r):
+    """Single-map EOS Rating with a soft floor.
+
+    One map is a small sample, and the season-scaled formula is linear, so a really bad map can go
+    to 0.2 or even below zero. Below 1.00 the rating becomes e^(r - 1): unchanged near 1.00
+    (0.90 -> 0.90, 0.70 -> 0.74), softer further down (0.40 -> 0.55, 0.20 -> 0.45) and never
+    negative (-0.20 -> 0.30). Ratings of 1.00 and above are left as they are.
+    """
+    return r if r >= 1 else math.exp(r - 1)
+
+
+def soften_map_ratings(h, rows):
+    if 'EOS Rating' not in h:
+        return
+    i = h.index('EOS Rating')
+    for row in rows:
+        if isinstance(row[i], (int, float)):
+            row[i] = round(soften_map(row[i]), 4)
+
+
 def norm_name(n):
     # Case-insensitive, and 0 == o (m0n0xx -> Monoxx.webp)
     return re.sub(r'[^a-z0-9]', '', str(n).lower()).replace('0', 'o')
@@ -247,6 +268,7 @@ def main():
     lb_h, lb_rows, lb_tail = read_table(wb['Leaderboard'])
     adv_h, adv_rows, _ = read_table(wb['Advanced'], header_rows=2, group_row=0)
     pm_h, pm_rows, _ = read_table(wb['Per map'])
+    soften_map_ratings(pm_h, pm_rows)
     m_h, m_rows, _ = read_table(wb['Matches'])
     pos_h, pos_rows, _ = read_table(wb['Positions']) if 'Positions' in wb.sheetnames else ([], [], [])
     # Weapons sheet (per player per weapon duels); only the columns the site uses, to keep data.js small
@@ -262,6 +284,9 @@ def main():
         for r in list(wb['Glossary'].iter_rows(values_only=True))[1:]:
             if r[0] and r[1] and r[0] not in ('How to update',):
                 glossary.append([str(r[0]).strip(), str(r[1]).strip()])
+    glossary.append(['Single-map rating', 'EOS Rating for one map (scoreboards). One map is a small sample, so ratings '
+                     'below 1.00 get a soft floor, e^(rating - 1): 0.90 stays 0.90, a 0.40 map shows 0.55 and no map '
+                     'goes below zero. Series ratings are averages of these, weighted by rounds. Season ratings are unchanged.'])
 
     note = next((str(r[0]) for r in lb_tail if r[0] and str(r[0]).startswith('Updated')), '')
     updated = re.search(r'Updated ([\d-]+ [\d:]+)', note)
