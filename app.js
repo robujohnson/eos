@@ -619,32 +619,24 @@
   // ---------- standings (BO3 series) ----------
   var PLAYOFF_SPOTS = 4;
   var standingsPos = {};
-  function renderStandings() {
+  // Ranking: win-loss difference, then the rulebook tiebreakers (7.10.7 Tiebreakers in Round Robin).
+  // games: [{A, B, maps: [[roundsA, roundsB], ...], sim}] - sim = a result imagined for the playoff
+  // scenarios, whose round scores are unknown. Overtime maps count as 13:12 for the winner. Whenever a
+  // step splits the tied teams, each group that is still tied is compared again from step 1.
+  var TB_STEPS = ['head-to-head result', 'head-to-head map difference', 'head-to-head maps won', 'overall map difference',
+    'overall maps won', 'head-to-head round difference', 'head-to-head rounds won', 'overall round difference', 'overall rounds won'];
+  function rankTeams(games) {
     var st = {};
     teams.forEach(function (t) { st[t.name] = { name: t.name, mw: 0, ml: 0, w: 0, l: 0 }; });
-    var bySeries = {};
-    maps.forEach(function (m) { (bySeries[m.series] = bySeries[m.series] || []).push(m); });
-    Object.keys(bySeries).forEach(function (k) {
-      var ms = bySeries[k], A = ms[0].a, B = ms[0].b, wa = 0, wb = 0;
-      ms.forEach(function (m) {
-        var aS = m.a === A ? m.as : m.bs, bS = m.a === A ? m.bs : m.as;
-        aS > bS ? wa++ : wb++;
-      });
-      [A, B].forEach(function (t) { if (!st[t]) st[t] = { name: t, mw: 0, ml: 0, w: 0, l: 0 }; });
-      st[A].mw += wa; st[A].ml += wb; st[B].mw += wb; st[B].ml += wa;
-      if (wa > wb) { st[A].w++; st[B].l++; } else if (wb > wa) { st[B].w++; st[A].l++; }
+    games.forEach(function (g) {
+      var wa = 0, wb = 0;
+      g.maps.forEach(function (sc) { sc[0] > sc[1] ? wa++ : wb++; });
+      [g.A, g.B].forEach(function (t) { if (!st[t]) st[t] = { name: t, mw: 0, ml: 0, w: 0, l: 0 }; });
+      st[g.A].mw += wa; st[g.A].ml += wb; st[g.B].mw += wb; st[g.B].ml += wa;
+      if (wa > wb) { st[g.A].w++; st[g.B].l++; } else if (wb > wa) { st[g.B].w++; st[g.A].l++; }
     });
-    // Ranking: win-loss difference, then the rulebook tiebreakers (7.10.7 Tiebreakers in Round Robin).
-    // Overtime maps count as 13:12 for the winner. Whenever a step splits the tied teams, each group
-    // that is still tied is compared again from step 1.
-    var games = Object.keys(bySeries).map(function (k) {
-      var ms = bySeries[k], A = ms[0].a, B = ms[0].b;
-      return { A: A, B: B, maps: ms.map(function (m) {
-        var x = m.a === A ? m.as : m.bs, y = m.a === A ? m.bs : m.as;
-        if (Math.max(x, y) > 13) { x = x > y ? 13 : 12; y = 13 + 12 - x; }   // overtime -> 13:12
-        return [x, y];
-      }) };
-    });
+    var simTeam = {};
+    games.forEach(function (g) { if (g.sim) { simTeam[g.A] = simTeam[g.B] = true; } });
     function tally(t, among) {
       var o = { pts: 0, md: 0, mw: 0, rd: 0, rw: 0 };
       games.forEach(function (g) {
@@ -657,31 +649,26 @@
       return o;
     }
     var TB = [
-      ['head-to-head result', function (t, g) { return tally(t, g).pts; }],
-      ['head-to-head map difference', function (t, g) { return tally(t, g).md; }],
-      ['head-to-head maps won', function (t, g) { return tally(t, g).mw; }],
-      ['overall map difference', function (t) { return tally(t).md; }],
-      ['overall maps won', function (t) { return tally(t).mw; }],
-      ['head-to-head round difference', function (t, g) { return tally(t, g).rd; }],
-      ['head-to-head rounds won', function (t, g) { return tally(t, g).rw; }],
-      ['overall round difference', function (t) { return tally(t).rd; }],
-      ['overall rounds won', function (t) { return tally(t).rw; }]
+      function (t, g) { return tally(t, g).pts; }, function (t, g) { return tally(t, g).md; }, function (t, g) { return tally(t, g).mw; },
+      function (t) { return tally(t).md; }, function (t) { return tally(t).mw; },
+      function (t, g) { return tally(t, g).rd; }, function (t, g) { return tally(t, g).rw; },
+      function (t) { return tally(t).rd; }, function (t) { return tally(t).rw; }
     ];
-    var tbNote = {};
+    var notes = {}, open = [];   // open: groups that only round scores of imagined results could split
     function breakTie(group) {
       if (group.length < 2) return group;
       for (var i = 0; i < TB.length; i++) {
-        var val = {}; group.forEach(function (t) { val[t] = TB[i][1](t, group); });
+        if (i >= 5 && group.some(function (t) { return simTeam[t]; })) { open.push(group.slice()); return group.slice().sort(function (x, y) { return x.localeCompare(y); }); }
+        var val = {}; group.forEach(function (t) { val[t] = TB[i](t, group); });
         var levels = group.map(function (t) { return val[t]; }).filter(function (v, j, arr) { return arr.indexOf(v) === j; }).sort(function (x, y) { return y - x; });
         if (levels.length < 2) continue;
-        var others = group.length === 2 ? null : group.length + ' teams';
         group.forEach(function (t) {
           var rest = group.filter(function (u) { return u !== t; });
-          tbNote[t] = 'Tied on wins with ' + (others ? rest.join(', ') : rest[0]) + ' – decided by ' + TB[i][0];
+          notes[t] = 'Tied on wins with ' + rest.join(', ') + ' – decided by ' + TB_STEPS[i];
         });
         return [].concat.apply([], levels.map(function (v) { return breakTie(group.filter(function (t) { return val[t] === v; })); }));
       }
-      group.forEach(function (t) { tbNote[t] = 'Still tied after all tiebreakers – decided by overtime'; });
+      group.forEach(function (t) { notes[t] = 'Still tied after all tiebreakers – decided by overtime'; });
       return group.slice().sort(function (x, y) { return x.localeCompare(y); });
     }
     var byDiff = {};
@@ -689,6 +676,26 @@
     var list = [].concat.apply([], Object.keys(byDiff).map(Number).sort(function (x, y) { return y - x; }).map(function (d) {
       return breakTie(byDiff[d].sort(function (x, y) { return x.localeCompare(y); }));
     })).map(function (k) { return st[k]; });
+    return { list: list, notes: notes, open: open };
+  }
+
+  // Group-stage results as games for rankTeams
+  function playedGames() {
+    var bySeries = {};
+    maps.forEach(function (m) { (bySeries[m.series] = bySeries[m.series] || []).push(m); });
+    return Object.keys(bySeries).map(function (k) {
+      var ms = bySeries[k], A = ms[0].a, B = ms[0].b;
+      return { A: A, B: B, maps: ms.map(function (m) {
+        var x = m.a === A ? m.as : m.bs, y = m.a === A ? m.bs : m.as;
+        if (Math.max(x, y) > 13) { x = x > y ? 13 : 12; y = 13 + 12 - x; }   // overtime -> 13:12
+        return [x, y];
+      }) };
+    });
+  }
+
+  function renderStandings() {
+    var games = playedGames(), R = rankTeams(games), list = R.list, tbNote = R.notes;
+    renderScenarios(games);
     list.forEach(function (t, i) { standingsPos[t.name] = { pos: i + 1, w: t.w, l: t.l }; });
     $('standings').innerHTML = '<thead><tr><th>#</th><th>Team</th><th>Matches</th><th>Won</th><th>Lost</th><th title="Maps won–lost">Maps</th></tr></thead><tbody>' +
       list.map(function (t, i) {
@@ -697,6 +704,100 @@
           '<td>' + (t.w + t.l) + '</td><td class="pos-v">' + t.w + '</td><td class="neg-v">' + t.l + '</td>' +
           '<td class="dim">' + t.mw + '–' + t.ml + '</td></tr>';
       }).join('') + '</tbody>';
+  }
+
+  // ---------- playoff scenarios ----------
+  // Tries every result (2-0, 2-1, 1-2, 0-2) of the group matches still to play, ranks the table each
+  // time with the real tiebreakers, and describes which results decide the playoff places.
+  function renderScenarios(games) {
+    var box = $('scenarios'); if (!box) return;
+    var playedPair = {}; games.forEach(function (g) { playedPair[[g.A, g.B].sort().join('|')] = true; });
+    var seen = {}, rem = (window.EOS_SCHEDULE || []).filter(function (m) {
+      if (!m.a || !m.b || m.stage === 'Playoffs') return false;
+      var k = [m.a, m.b].sort().join('|'); if (playedPair[k] || seen[k]) return false;
+      return (seen[k] = true);
+    });
+    if (!rem.length || rem.length > 6) { box.hidden = true; return; }
+    var OUT = [[2, 0], [2, 1], [1, 2], [0, 2]], n = rem.length, total = Math.pow(4, n), N = PLAYOFF_SPOTS;
+    function combo(c) { var o = []; for (var k = 0; k < n; k++) { o.push(c % 4); c = Math.floor(c / 4); } return o; }
+    function simGames(o) {
+      return games.concat(rem.map(function (m, k) {
+        var w = OUT[o[k]], ms = [];
+        for (var x = 0; x < w[0]; x++) ms.push([1, 0]);
+        for (var y = 0; y < w[1]; y++) ms.push([0, 1]);
+        return { A: m.a, B: m.b, maps: ms, sim: true };
+      }));
+    }
+    // seeds[i] = the team in place i+1, or a list of teams if only unknown round scores separate them
+    var res = [];
+    for (var c = 0; c < total; c++) {
+      var R = rankTeams(simGames(combo(c))), names = R.list.map(function (t) { return t.name; });
+      var seeds = names.slice(0, N + 1).map(function (t) {
+        var g = R.open.filter(function (gr) { return gr.indexOf(t) >= 0; })[0];
+        return g ? g.slice().sort() : t;
+      });
+      res.push({ seeds: seeds.slice(0, N), out: names.slice(N), key: JSON.stringify(seeds.slice(0, N)) });
+    }
+    // team status across all scenarios
+    var all = rankTeams(games).list.map(function (t) { return t.name; });
+    function places(t) { var ps = []; res.forEach(function (r) { r.seeds.forEach(function (sd, i) { if (sd === t || (Array.isArray(sd) && sd.indexOf(t) >= 0)) ps.push(Array.isArray(sd) ? -1 : i + 1); }); }); return ps; }
+    var clinched = [], out = [], alive = [];
+    all.forEach(function (t) {
+      var ps = places(t);
+      if (ps.length === total && ps.every(function (x) { return x > 0; })) clinched.push({ t: t, seed: ps.every(function (x) { return x === ps[0]; }) ? ps[0] : null });
+      else if (!ps.length) out.push(t); else alive.push(t);
+    });
+    // which outcomes of each match lead to the same results whatever happens elsewhere
+    function idx(o) { var c = 0; for (var k = n - 1; k >= 0; k--) c = c * 4 + o[k]; return c; }
+    var classes = rem.map(function (m, k) {
+      var sig = {};
+      [0, 1, 2, 3].forEach(function (v) {
+        var keys = [];
+        for (var c = 0; c < total; c++) { var o = combo(c); if (o[k] !== 0) continue; o[k] = v; keys.push(res[idx(o)].key); }
+        var sg = keys.join('#'); (sig[sg] = sig[sg] || []).push(v);
+      });
+      return Object.keys(sig).map(function (k2) { return sig[k2]; });
+    });
+    var rel = []; classes.forEach(function (cl, k) { if (cl.length > 1) rel.push(k); });
+    function cond(k, cl) {
+      var m = rem[k];
+      if (cl.length === 2 && cl[0] === 0 && cl[1] === 1) return '<b>' + esc(m.a) + '</b> beat ' + esc(m.b);
+      if (cl.length === 2 && cl[0] === 2 && cl[1] === 3) return '<b>' + esc(m.b) + '</b> beat ' + esc(m.a);
+      return cl.map(function (v) { var w = OUT[v]; return w[0] > w[1] ? '<b>' + esc(m.a) + '</b> beat ' + esc(m.b) + ' ' + w[0] + '–' + w[1] : '<b>' + esc(m.b) + '</b> beat ' + esc(m.a) + ' ' + w[1] + '–' + w[0]; }).join(' or ');
+    }
+    var html = '<div class="sc-head">Playoff scenarios <span>· ' + n + ' group match' + (n > 1 ? 'es' : '') + ' left</span></div>';
+    var line = [];
+    if (clinched.length) line.push('<span class="sc-in">Through:</span> ' + clinched.map(function (x) { return '<b>' + esc(x.t) + '</b>' + (x.seed ? ' (' + ordinal(x.seed) + ')' : ''); }).join(', '));
+    if (out.length) line.push('<span class="sc-out">Out:</span> ' + out.map(esc).join(', '));
+    html += '<p>' + line.join('<br>') + '</p>';
+    var lines = 1; rel.forEach(function (k) { lines *= classes[k].length; });
+    if (alive.length && rel.length && lines <= 10) {
+      var fixedSeeds = []; for (var i = 0; i < N; i++) fixedSeeds.push(res.every(function (r) { return r.seeds[i] === res[0].seeds[i]; }));
+      var items = [];
+      (function walk(d, pick) {
+        if (d === rel.length) {
+          var o = combo(0); rel.forEach(function (k, j) { o[k] = classes[k][pick[j]][0]; });
+          var r = res[idx(o)];
+          var spots = r.seeds.map(function (sd, i2) {
+            if (fixedSeeds[i2]) return null;
+            return Array.isArray(sd) ? sd.map(esc).join(' or ') + ' ' + ordinal(i2 + 1) + ' <span class="dim">(round difference)</span>' : '<b>' + esc(sd) + '</b> ' + ordinal(i2 + 1);
+          }).filter(Boolean);
+          var gone = alive.filter(function (t) { return r.seeds.every(function (sd) { return sd !== t && !(Array.isArray(sd) && sd.indexOf(t) >= 0); }); });
+          items.push('<li><span class="sc-if">If ' + rel.map(function (k, j) { return cond(k, classes[k][pick[j]]); }).join(' and ') + ':</span> ' +
+            spots.join(', ') + (gone.length ? ' – <span class="sc-out">' + gone.map(esc).join(', ') + ' out</span>' : '') + '</li>');
+          return;
+        }
+        classes[rel[d]].forEach(function (_, ci) { walk(d + 1, pick.concat(ci)); });
+      })(0, []);
+      html += '<ul>' + items.join('') + '</ul>';
+      var still = rem.filter(function (_, k) { return rel.indexOf(k) < 0; });
+      if (still.length) html += '<p class="dim">' + still.map(function (m) { return esc(m.a) + ' – ' + esc(m.b); }).join(', ') + (still.length > 1 ? ' don’t' : ' doesn’t') + ' change the playoff places.</p>';
+    } else if (alive.length) {
+      html += '<p>Still in the race: ' + alive.map(function (t) { return '<b>' + esc(t) + '</b>'; }).join(', ') + '.</p>';
+    } else {
+      html += '<p>All playoff places are decided' + (rel.length ? '; the remaining results only change the seeding.' : '.') + '</p>';
+    }
+    box.innerHTML = html; box.hidden = false;
   }
 
   // ---------- teams + results ----------
