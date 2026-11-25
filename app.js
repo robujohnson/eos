@@ -260,6 +260,11 @@
   });
   maps.sort(function (x, y) { return x.time < y.time ? -1 : x.time > y.time ? 1 : 0; });
   var mapById = {}; maps.forEach(function (m) { mapById[m.id] = m; });
+  // Playoff maps: played on or after the first playoff date in schedule.js. They don't count in the
+  // group standings; the leaderboard can show them separately.
+  var PLAYOFF_START = (window.EOS_SCHEDULE || []).filter(function (m) { return m.stage === 'Playoffs' && m.date; })
+    .map(function (m) { return m.date; }).sort()[0] || '9999-12-31';
+  maps.forEach(function (m) { m.playoff = !!m.date && m.date >= PLAYOFF_START; });
 
 
   // Teams
@@ -267,6 +272,7 @@
     var tp = players.filter(function (p) { return p.team === t; });
     var w = 0, l = 0, rw = 0, rl = 0;
     maps.forEach(function (m) {
+      if (m.playoff) return;
       if (m.a === t) { rw += m.as; rl += m.bs; m.as > m.bs ? w++ : l++; }
       else if (m.b === t) { rw += m.bs; rl += m.as; m.bs > m.as ? w++ : l++; }
     });
@@ -442,6 +448,34 @@
     { k: 'kpr', lab: 'KPR vs role', title: 'Kills per round minus what is typical for the positions he plays', get: function (p) { return p.kprRole; }, hi: true, cell: function (p) { return p.kprRole == null ? '–' : scv(p.kprRole, signed(p.kprRole, 2)); } }
   ];
   var advanced = false, gunView = false, gunSel = 'g:rifles';
+  // Leaderboard phase: 'all' = the spreadsheet's season figures; 'reg' / 'po' = built from the per-map rows
+  // (round-weighted, so EOS Rating can differ from the season figure by about 0.01).
+  var phase = 'all', phaseCache = {};
+  function unsoft(r) { return r == null ? null : r < 1 ? 1 + Math.log(r) : r; }   // undo the single-map soft floor
+  function phasePlayers(ph) {
+    if (phaseCache[ph]) return phaseCache[ph];
+    var byKey = {};
+    players.forEach(function (p) { byKey[(p.name + '|' + p.team).toLowerCase()] = p; });
+    var acc = {};
+    rows(D.perMap).forEach(function (r) {
+      var m = mapById[r.Match], po = m ? m.playoff : false;
+      if ((ph === 'po') !== po) return;
+      var p = byKey[(r.Player + '|' + r.Team).toLowerCase()]; if (!p) return;
+      var a = acc[p.name + '|' + p.team] = acc[p.name + '|' + p.team] || { p: p, maps: 0, rounds: 0, rat: 0, rs: 0, ds: 0, k: 0, d: 0, adr: 0 };
+      var rd = num(r.Rounds) || 0;
+      a.maps++; a.rounds += rd; a.k += num(r.K) || 0; a.d += num(r.D) || 0;
+      a.rat += (unsoft(num(r['EOS Rating'])) || 0) * rd; a.rs += (num(r['Round Swing / rd']) || 0) * rd;
+      a.ds += num(r['Duel Swing / map']) || 0; a.adr += (num(r.ADR) || 0) * rd;
+    });
+    var out = Object.keys(acc).map(function (k) {
+      var a = acc[k], o = Object.create(a.p), R = a.rounds || 1;
+      o.base = a.p; o.maps = a.maps; o.rounds = a.rounds; o.rating = a.rat / R; o.roundSwing = a.rs / R; o.duelSwing = a.ds / a.maps;
+      o.k = a.k; o.d = a.d; o.pm = a.k - a.d; o.adr = a.adr / R; o.low = ph === 'po' ? false : a.rounds < MIN;
+      return o;
+    });
+    return (phaseCache[ph] = out);
+  }
+  var PHASES = [['all', 'All matches'], ['reg', 'Regular season'], ['po', 'Playoffs']];
   var GUN_COLS = [
     { k: 'rank', lab: '#', get: null },
     { k: 'name', lab: 'Player', get: function (p) { return p.name.toLowerCase(); }, asc: true },
@@ -471,14 +505,18 @@
         '<optgroup label="Groups">' + GUN_GROUPS.map(function (g) { return '<option value="' + g.k + '"' + (gunSel === g.k ? ' selected' : '') + '>' + esc(g.lab) + '</option>'; }).join('') + '</optgroup>' +
         '<optgroup label="Single guns">' + GUN_SINGLES.map(function (w) { return '<option value="' + esc(w) + '"' + (gunSel === w ? ' selected' : '') + '>' + esc(wname(w)) + '</option>'; }).join('') + '</optgroup></select>' : '') +
         '<button class="fbtn adv gunbtn' + (gunView ? ' on' : '') + '" id="gunbtn" aria-pressed="' + gunView + '" title="Rate every player with one gun">Weapons</button>' : '') +
-      '<button class="fbtn adv' + (advanced ? ' on' : '') + '" id="advbtn" aria-pressed="' + advanced + '" title="Show raw aim and other advanced stats">Advanced</button></div>';
+      '<button class="fbtn adv' + (advanced ? ' on' : '') + '" id="advbtn" aria-pressed="' + advanced + '" title="Show raw aim and other advanced stats">Advanced</button></div>' +
+      '<div class="frow phases" role="group" aria-label="Matches included">' + PHASES.map(function (x) {
+        return '<button class="fbtn ph' + (phase === x[0] ? ' on' : '') + '" data-ph="' + x[0] + '" aria-pressed="' + (phase === x[0]) + '">' + x[1] + '</button>';
+      }).join('') + '</div>';
   }
 
   function renderTable() {
     var cols = gunView ? GUN_COLS : advanced ? ADV_COLS : COLS;
     var col = cols.filter(function (c) { return c.k === sortKey; })[0];
     if (!col) { sortKey = gunView ? 'grat' : advanced ? 'aim' : 'rating'; sortAsc = false; col = cols.filter(function (c) { return c.k === sortKey; })[0]; }
-    var list = players.filter(function (p) { return (!Object.keys(teamFilter).length || teamFilter[p.team]) && roleMatch(p) && (showLow || !p.low) && (!gunView || gunStat(p, gunSel)); });
+    var src = phase !== 'all' && !gunView && !advanced ? phasePlayers(phase) : players;
+    var list = src.filter(function (p) { return (!Object.keys(teamFilter).length || teamFilter[p.team]) && roleMatch(p) && (showLow || !p.low) && (!gunView || gunStat(p, gunSel)); });
     list.sort(function (a, b) {
       if (gunView) {   // players with a real sample with this gun first
         var la = gunStat(a, gunSel).duels < GUN_MIN, lb = gunStat(b, gunSel).duels < GUN_MIN;
@@ -489,7 +527,7 @@
       var r = x < y ? -1 : x > y ? 1 : 0;
       return sortAsc ? r : -r;
     });
-    var maxR = Math.max.apply(null, players.map(function (p) { return p.rating || 0; }));
+    var maxR = Math.max.apply(null, src.map(function (p) { return p.rating || 0; }).concat([1]));
     var head = '<thead><tr>' + cols.map(function (c) {
       return '<th data-k="' + c.k + '"' + (c.title ? ' title="' + esc(c.title) + '"' : '') + (c.k === sortKey ? ' class="sorted"' : '') + '>' + esc(c.lab) + (c.k === sortKey ? (sortAsc ? ' ▲' : ' ▼') : '') + '</th>';
     }).join('') + '</tr></thead>';
@@ -509,7 +547,9 @@
       $('lbnote').textContent = 'Gun rating for ' + gunLabel(gunSel) + ': the player\u2019s EOS rating, adjusted by how his duels with this gun (wins and losses vs the win chance each situation predicted) compare with his duels overall. Under ' + GUN_MIN + ' duels in grey and listed last.';
       return;
     }
-    $('lbnote').textContent = '';
+    var nMaps = maps.filter(function (m) { return !m.noDemo && (phase === 'po') === m.playoff; }).length;
+    $('lbnote').textContent = phase === 'all' ? '' : (phase === 'po' ? 'Playoffs only' : 'Regular season only') + ' · ' + nMaps + ' map' + (nMaps === 1 ? '' : 's') +
+      '. Built from the per-map stats (weighted by rounds), so EOS Rating can differ from the full-season figure by about 0.01. Advanced and Weapons views cover all matches.';
     if (advanced) {
       // best three (60+ rounds) in each column get a highlight, darkest = 1st
       var top = {};
@@ -530,11 +570,12 @@
       }).join('') + '</tbody>';
       return;
     }
+    if (!list.length) { $('lb').innerHTML = head + '<tbody><tr class="empty"><td colspan="' + cols.length + '">' + (phase === 'po' ? 'No playoff matches yet – playoff stats appear here once the demos are in.' : 'No players match the filters.') + '</td></tr></tbody>'; return; }
     var body = '<tbody>' + list.map(function (p, i) {
       var k = p.name + '|' + p.team;
       var w = p.rating == null ? 0 : clamp(p.rating / maxR, 0, 1) * 100;
       function sc(v, txt) { return '<span class="' + (v > 0 ? 'pos-v' : v < 0 ? 'neg-v' : '') + '">' + txt + '</span>'; }
-      return '<tr data-k="' + esc(k) + '" class="' + (p.low ? 'low' : '') + (current === p ? ' sel' : '') + '">' +
+      return '<tr data-k="' + esc(k) + '" class="' + (p.low ? 'low' : '') + (current && (current === p || current === p.base) ? ' sel' : '') + '">' +
         '<td class="dim">' + (i + 1) + '</td>' +
         '<td><span class="pl">' + logo(p.team) + '<b title="' + esc(p.team) + '">' + esc(p.name) + '</b></span></td>' +
         '<td>' + p.maps + '</td>' +
@@ -682,7 +723,7 @@
   // Group-stage results as games for rankTeams
   function playedGames() {
     var bySeries = {};
-    maps.forEach(function (m) { (bySeries[m.series] = bySeries[m.series] || []).push(m); });
+    maps.forEach(function (m) { if (!m.playoff) (bySeries[m.series] = bySeries[m.series] || []).push(m); });
     return Object.keys(bySeries).map(function (k) {
       var ms = bySeries[k], A = ms[0].a, B = ms[0].b;
       return { A: A, B: B, maps: ms.map(function (m) {
@@ -695,7 +736,12 @@
 
   function renderStandings() {
     var games = playedGames(), R = rankTeams(games), list = R.list, tbNote = R.notes;
-    renderScenarios(games);
+    var left = renderScenarios(games);
+    var top = list.slice(0, PLAYOFF_SPOTS).map(function (t) { return '<b>' + esc(t.name) + '</b>'; });
+    $('stnote').innerHTML = left
+      ? 'Matches are BO3. Top ' + PLAYOFF_SPOTS + ' above the dashed line make the playoffs. Teams level on wins are separated by the rulebook tiebreakers (7.10.7: head-to-head first, then map and round difference); <b>TB</b> marks a place decided this way – hover the row to see how.'
+      : '<b>Group stage finished.</b> ' + top.slice(0, -1).join(', ') + ' and ' + top[top.length - 1] + ' go to the playoffs: double elimination, all BO3, with 1st vs 4th and 2nd vs 3rd in the upper bracket semi-finals. ' +
+        'Places level on wins were decided by the rulebook tiebreakers (7.10.7); <b>TB</b> marks them – hover the row to see which one. Playoff matches don\u2019t count in this table.';
     list.forEach(function (t, i) { standingsPos[t.name] = { pos: i + 1, w: t.w, l: t.l }; });
     $('standings').innerHTML = '<thead><tr><th>#</th><th>Team</th><th>Matches</th><th>Won</th><th>Lost</th><th title="Maps won–lost">Maps</th></tr></thead><tbody>' +
       list.map(function (t, i) {
@@ -717,7 +763,7 @@
       var k = [m.a, m.b].sort().join('|'); if (playedPair[k] || seen[k]) return false;
       return (seen[k] = true);
     });
-    if (!rem.length || rem.length > 6) { box.hidden = true; return; }
+    if (!rem.length || rem.length > 6) { box.hidden = true; return rem.length; }
     var OUT = [[2, 0], [2, 1], [1, 2], [0, 2]], n = rem.length, total = Math.pow(4, n), N = PLAYOFF_SPOTS;
     function combo(c) { var o = []; for (var k = 0; k < n; k++) { o.push(c % 4); c = Math.floor(c / 4); } return o; }
     function simGames(o) {
@@ -798,6 +844,7 @@
       html += '<p>All playoff places are decided' + (rel.length ? '; the remaining results only change the seeding.' : '.') + '</p>';
     }
     box.innerHTML = html; box.hidden = false;
+    return rem.length;
   }
 
   // ---------- teams + results ----------
@@ -832,7 +879,7 @@
         aS > bS ? wa++ : wb++;
       });
       s.A = A; s.B = B; s.wa = wa; s.wb = wb; seriesById[s.id] = s;
-      return '<div class="panel series" role="button" tabindex="0" data-series="' + esc(s.id) + '" title="Open scoreboard"><div class="sdate">' + esc(s.date) + (s.maps[0].noDemo ? ' · <span class="nd" title="No demo: box score only, not in player stats">no demo</span>' : '') + '</div><div class="shead">' +
+      return '<div class="panel series" role="button" tabindex="0" data-series="' + esc(s.id) + '" title="Open scoreboard"><div class="sdate">' + (s.maps[0].playoff ? '<span class="po-tag">Playoffs</span> ' : '') + esc(s.date) + (s.maps[0].noDemo ? ' · <span class="nd" title="No demo: box score only, not in player stats">no demo</span>' : '') + '</div><div class="shead">' +
         '<span class="steam r ' + (wa > wb ? 'win' : 'loss') + '"><span>' + wbr(A) + '</span>' + logo(A) + '</span>' +
         '<span class="sscore">' + wa + ' : ' + wb + '</span>' +
         '<span class="steam ' + (wb > wa ? 'win' : 'loss') + '">' + logo(B) + '<span>' + wbr(B) + '</span></span></div>' +
@@ -1072,9 +1119,23 @@
     if (!s) return null;
     return s.A === a ? [s.wa, s.wb] : [s.wb, s.wa];
   }
+  // Teams for later rounds come from earlier results when schedule.js doesn't name them yet.
+  var BRACKET_FEED = { ubf: [['ubsf1', 'w'], ['ubsf2', 'w']], lbf: [['ubsf1', 'l'], ['ubsf2', 'l']], cons: [['ubf', 'l'], ['lbf', 'w']], gf: [['ubf', 'w'], ['cons', 'w']] };
   function renderBracket(entries) {
     if (!entries.length) return '';
     var byLabel = {}; entries.forEach(function (m) { byLabel[String(m.label).toLowerCase()] = m; });
+    var outcome = {};
+    BRACKET.forEach(function (b) {
+      var m = byLabel[b.label.toLowerCase()]; if (!m) return;
+      var feed = BRACKET_FEED[b.key];
+      if (feed && (!m.a || !m.b)) {
+        var t = feed.map(function (f) { var o = outcome[f[0]]; return o ? o[f[1]] : null; });
+        if (!m.a && t[0]) m.a = t[0];
+        if (!m.b && t[1]) m.b = t[1];
+      }
+      var sc = m.a && m.b ? seriesResult(m.a, m.b, m.date || '') || (m.sa != null && m.sb != null ? [m.sa, m.sb] : null) : null;
+      if (sc && sc[0] !== sc[1] && Math.max(sc[0], sc[1]) >= Math.ceil((m.bo || 3) / 2)) outcome[b.key] = sc[0] > sc[1] ? { w: m.a, l: m.b } : { w: m.b, l: m.a };
+    });
     var DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     var boxes = BRACKET.map(function (b) {
       var m = byLabel[b.label.toLowerCase()] || {};
@@ -1248,12 +1309,16 @@
       renderLeaders(); return;
     }
     var fb = e.target.closest('.fbtn');
+    if (fb && fb.hasAttribute('data-ph')) {
+      phase = fb.dataset.ph; if (phase !== 'all') { advanced = false; gunView = false; if (!COLS.some(function (c) { return c.k === sortKey; })) sortKey = 'rating'; }
+      renderFilters(); renderTable(); return;
+    }
     if (fb && fb.id === 'advbtn') {
-      advanced = !advanced; gunView = false; sortKey = advanced ? 'aim' : 'rating'; sortAsc = false;
+      advanced = !advanced; gunView = false; phase = 'all'; sortKey = advanced ? 'aim' : 'rating'; sortAsc = false;
       renderFilters(); renderTable(); return;
     }
     if (fb && fb.id === 'gunbtn') {
-      gunView = !gunView; advanced = false; sortKey = gunView ? 'grat' : 'rating'; sortAsc = false;
+      gunView = !gunView; advanced = false; phase = 'all'; sortKey = gunView ? 'grat' : 'rating'; sortAsc = false;
       renderFilters(); renderTable(); return;
     }
     if (fb && fb.hasAttribute('data-r')) {
