@@ -1069,15 +1069,15 @@
     var list = window.EOS_SCHEDULE || [], now = new Date();
     var played = Object.keys(seriesById).map(function (k) { return seriesById[k]; });
     var DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var bracket = renderBracket(list.filter(function (m) { return m.stage === 'Playoffs'; }));   // first: fills in later-round teams
+    $('bracket').innerHTML = bracket; $('sec-playoffs').hidden = !bracket; fitBracket();
     var up = list.filter(function (m) {
-      if (m.stage === 'Playoffs') return false;
       var start = finnishDate(m.date, m.time);
       if (now - start > 24 * 3600 * 1000) return false;
       if (m.a && m.b && played.some(function (s) { return s.date >= m.date && ((s.A === m.a && s.B === m.b) || (s.A === m.b && s.B === m.a)); })) return false;
       return true;
     });
-    var bracket = renderBracket(list.filter(function (m) { return m.stage === 'Playoffs'; }));
-    if (!up.length) { $('upcoming').innerHTML = (bracket || '<p class="muted">No upcoming matches scheduled.</p>'); return; }
+    if (!up.length) { $('upcoming').innerHTML = '<p class="muted">No upcoming matches scheduled.</p>'; return; }
     function rec(t) { var r = standingsPos[t]; return r ? r.w + '–' + r.l : ''; }
     function teamRow(t) {
       if (!t) return '<div class="up-tbd">TBD</div>';
@@ -1094,24 +1094,24 @@
         : days === 0 ? '<span class="rel">Today</span>' : days === 1 ? '<span class="rel">Tomorrow</span>' : '';
       var d = new Date(Date.UTC(+m.date.slice(0, 4), +m.date.slice(5, 7) - 1, +m.date.slice(8, 10)));
       var idx = (window.EOS_SCHEDULE || []).indexOf(m);
-      html += '<div class="panel up' + (m.a && m.b ? ' clickable" data-preview="' + idx + '" role="button" tabindex="0" title="Match preview' : '') + '"><div class="up-when"><div class="d">' + DOW[d.getUTCDay()] + '</div><div class="dd">' + d.getUTCDate() + '.' + (d.getUTCMonth() + 1) + '.</div><div class="t">' + esc(m.time) + '</div>' + rel + '</div>' +
+      html += '<div class="panel up' + (m.label ? ' has-label' : '') + (m.a && m.b ? ' clickable" data-preview="' + idx + '" role="button" tabindex="0" title="Match preview' : '') + '"><div class="up-when"><div class="d">' + DOW[d.getUTCDay()] + '</div><div class="dd">' + d.getUTCDate() + '.' + (d.getUTCMonth() + 1) + '.</div><div class="t">' + esc(m.time) + '</div>' + rel + '</div>' +
         (m.label ? '<div class="up-label">' + esc(m.label) + (m.bo ? ' <span class="dim">(BO' + m.bo + ')</span>' : '') + '</div>' + (m.a || m.b ? teamRow(m.a) + teamRow(m.b) : '<div class="up-tbd">Teams TBD</div>')
           : teamRow(m.a) + teamRow(m.b)) + '</div>';
     });
-    $('upcoming').innerHTML = html + '</div>' + bracket;
+    $('upcoming').innerHTML = html + '</div>';
   }
 
   // ---------- playoff bracket ----------
   // Double elimination for the top 4. Boxes are matched to schedule.js entries by label.
   var BRACKET = [
-    { key: 'ubsf1', label: 'Upper Bracket Semi-final #1', x: 0, y: 24, hint: ['TBD', 'TBD'] },
-    { key: 'ubsf2', label: 'Upper Bracket Semi-final #2', x: 0, y: 132, hint: ['TBD', 'TBD'] },
-    { key: 'ubf', label: 'Upper Bracket Final', x: 280, y: 78, hint: ['Winner UB SF #1', 'Winner UB SF #2'] },
-    { key: 'lbf', label: 'Lower Bracket Final', x: 0, y: 284, hint: ['Loser UB SF #1', 'Loser UB SF #2'] },
-    { key: 'cons', label: 'Consolidation Final', x: 280, y: 284, hint: ['Loser UB Final', 'Winner LB Final'] },
-    { key: 'gf', label: 'Grand Final', x: 560, y: 181, hint: ['Winner UB Final', 'Winner Consolidation'] }
+    { key: 'ubsf1', label: 'Upper Bracket Semi-final #1', short: 'UB Semi-final 1', x: 0, y: 24, hint: ['TBD', 'TBD'] },
+    { key: 'ubsf2', label: 'Upper Bracket Semi-final #2', short: 'UB Semi-final 2', x: 0, y: 132, hint: ['TBD', 'TBD'] },
+    { key: 'ubf', label: 'Upper Bracket Final', short: 'UB Final', x: 212, y: 78, hint: ['Winner UB SF 1', 'Winner UB SF 2'] },
+    { key: 'lbf', label: 'Lower Bracket Final', short: 'LB Final', x: 0, y: 284, hint: ['Loser UB SF 1', 'Loser UB SF 2'] },
+    { key: 'cons', label: 'Consolidation Final', short: 'Consolidation', x: 212, y: 284, hint: ['Loser UB Final', 'Winner LB Final'] },
+    { key: 'gf', label: 'Grand Final', short: 'Grand Final', x: 424, y: 181, hint: ['Winner UB Final', 'Winner Consol.'] }
   ];
-  var BW = 230, TITLE = 18, ROW = 30, BH = TITLE + ROW * 2;
+  var BW = 196, TITLE = 18, ROW = 30, BH = TITLE + ROW * 2;
   function seriesResult(a, b, date) {
     var s = Object.keys(seriesById).map(function (k) { return seriesById[k]; }).filter(function (s) {
       return s.date >= date && ((s.A === a && s.B === b) || (s.A === b && s.B === a));
@@ -1150,7 +1150,7 @@
       }
       var pv = m.a && m.b ? ' data-preview="' + (window.EOS_SCHEDULE || []).indexOf(m) + '" title="Match preview"' : '';
       return '<div class="br-box' + (pv ? ' clickable' : '') + '"' + pv + ' style="left:' + b.x + 'px;top:' + b.y + 'px;width:' + BW + 'px">' +
-        '<div class="br-title"><span>' + esc(b.label.replace('Semi-final', 'SF')) + (m.bo ? ' · BO' + m.bo : '') + '</span><span class="br-when">' + when + '</span></div>' +
+        '<div class="br-title"><span>' + esc(b.short) + '</span><span class="br-when">' + when + '</span></div>' +
         '<div class="br-match">' + row(m.a, 0) + row(m.b, 1) + '</div></div>';
     });
     function c(key) { var b = BRACKET.filter(function (x) { return x.key === key; })[0]; return { l: b.x, r: b.x + BW, y: b.y + TITLE + ROW }; }
@@ -1158,12 +1158,22 @@
       var a = c(from), b = c(to), mx = a.r + (b.l - a.r) / 2;
       return '<path d="M' + a.r + ' ' + a.y + 'H' + mx + 'V' + b.y + 'H' + b.l + '"/>';
     }
-    var W = 560 + BW, H = 284 + BH + 4;
+    var W = 424 + BW, H = 284 + BH + 4;
     var lines = '<svg class="br-lines" width="' + W + '" height="' + H + '" aria-hidden="true">' +
       elbow('ubsf1', 'ubf') + elbow('ubsf2', 'ubf') + elbow('lbf', 'cons') + elbow('ubf', 'gf') + elbow('cons', 'gf') + '</svg>';
-    return '<div class="up-stage">Playoffs</div><div class="panel br-wrap"><div class="br" style="width:' + W + 'px;height:' + H + 'px">' +
-      '<span class="br-lab" style="top:0">Upper bracket</span><span class="br-lab" style="top:258px">Lower bracket</span>' + lines + boxes.join('') + '</div></div>';
+    return '<div class="panel br-wrap"><div class="br-fit" data-w="' + W + '" data-h="' + H + '"><div class="br" style="width:' + W + 'px;height:' + H + 'px">' +
+      '<span class="br-lab" style="top:0">Upper bracket</span><span class="br-lab" style="top:258px">Lower bracket</span>' + lines + boxes.join('') + '</div></div></div>';
   }
+  // Shrink the bracket to fit its column (down to 80 %; narrower screens scroll sideways).
+  function fitBracket() {
+    var f = document.querySelector('#bracket .br-fit'); if (!f) return;
+    var wrap = f.parentNode, cs = getComputedStyle(wrap);
+    var avail = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    var W = +f.dataset.w, H = +f.dataset.h, k = Math.max(0.8, Math.min(1, avail / W));
+    f.style.width = W * k + 'px'; f.style.height = H * k + 'px';
+    f.firstChild.style.transform = k < 1 ? 'scale(' + k + ')' : '';
+  }
+  window.addEventListener('resize', fitBracket);
 
   // ---------- match preview (upcoming match) ----------
   function teamMapRecords(name) {
