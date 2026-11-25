@@ -536,6 +536,11 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
 .scen li{margin:5px 0}
 .scen .sc-if{color:var(--muted)} .scen .sc-if b{color:var(--text)}
 .scen .sc-in{color:var(--good);font-weight:700} .scen .sc-out{color:var(--bad);font-weight:600}
+.frow.phases{margin-top:8px}
+.fbtn.ph.on{background:rgba(249,115,22,.18);border-color:rgba(249,115,22,.55)}
+.lb tr.empty td{text-align:center;color:var(--muted);padding:18px;cursor:default}
+.po-tag{font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fde68a;background:rgba(234,179,8,.18);border:1px solid rgba(234,179,8,.4);border-radius:4px;padding:0 5px}
+:root[data-theme="light"] .po-tag{color:#854d0e;background:rgba(202,138,4,.14)}
 </style>
 </head>
 <body>
@@ -568,7 +573,7 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
     <h2>Standings</h2>
     <div class="st-wrap"><div class="panel tablewrap"><table class="st" id="standings"></table></div>
     <div class="panel scen" id="scenarios" hidden></div>
-    <div class="st-note">Matches are BO3. Top 4 above the dashed line make the playoffs. Teams level on wins are separated by the rulebook tiebreakers (head-to-head first, then map and round difference); <b>TB</b> marks a place decided this way – hover it to see how.</div></div>
+    <div class="st-note" id="stnote"></div></div>
   </section>
   </div>
 
@@ -629,13 +634,13 @@ footer{margin-top:40px;color:var(--dim);font-size:12px;text-align:center}
 <div class="sb-overlay" id="tm" hidden role="dialog" aria-modal="true" aria-label="Team details"><div class="panel sb-panel" id="tm-body"></div></div>
 <div class="sb-overlay" id="sb" hidden role="dialog" aria-modal="true" aria-label="Match scoreboard"><div class="panel sb-panel" id="sb-body"></div></div>
 
-<script src="/eos/roles.js?v=20261124101406"></script>
-<script src="/eos/extra-results.js?v=20261124101406"></script>
-<script src="/eos/schedule.js?v=20261124101406"></script>
-<script src="/eos/history.js?v=20261124101406"></script>
-<script src="/eos/data.js?v=20261124101406"></script>
-<script src="/eos/season-menu.js?v=20261124101406"></script>
-<script src="/eos/app.js?v=20261124101406"></script>
+<script src="/eos/roles.js?v=20261125091305"></script>
+<script src="/eos/extra-results.js?v=20261125091305"></script>
+<script src="/eos/schedule.js?v=20261125091305"></script>
+<script src="/eos/history.js?v=20261125091305"></script>
+<script src="/eos/data.js?v=20261125091305"></script>
+<script src="/eos/season-menu.js?v=20261125091305"></script>
+<script src="/eos/app.js?v=20261125091305"></script>
 <script data-goatcounter="https://robu.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>

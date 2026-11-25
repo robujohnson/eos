@@ -216,7 +216,7 @@ ADV_KEEP = ['Player', 'Team',
             'Trading|Trade kill success%', 'Trading|Trade kills', 'Trading|Trade opportunities',
             'Trading|Tradeable death%', 'Trading|Traded death success%',
             'Utility (per round)|Flash assists', 'Utility (per round)|Utility dmg']
-PERMAP_KEEP = ['Match', 'Player', 'Team', 'Rounds', 'K', 'D', 'ADR', 'KAST', 'EOS Rating']
+PERMAP_KEEP = ['Match', 'Player', 'Team', 'Rounds', 'K', 'D', 'ADR', 'KAST', 'EOS Rating', 'Round Swing / rd', 'Duel Swing / map']
 
 
 def keep_cols(h, rows, keep):
