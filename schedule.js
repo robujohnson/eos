@@ -25,8 +25,8 @@ window.EOS_SCHEDULE = [
   {"stage": "Round 7", "date": "2026-11-24", "time": "20:00", "a": "HAVU", "b": "KUUSAMO.gg"},
   {"stage": "Playoffs", "date": "2026-11-27", "time": "17:30", "label": "Upper Bracket Semi-final #1", "bo": 3, "a": "Prestige", "b": "SINQU"},
   {"stage": "Playoffs", "date": "2026-11-27", "time": "20:00", "label": "Upper Bracket Semi-final #2", "bo": 3, "a": "HAVU", "b": "BOJONG"},
-  {"stage": "Playoffs", "date": "2026-11-28", "time": "17:30", "label": "Lower Bracket Final", "bo": 3},
-  {"stage": "Playoffs", "date": "2026-11-28", "time": "20:00", "label": "Upper Bracket Final", "bo": 3},
+  {"stage": "Playoffs", "date": "2026-11-28", "time": "17:30", "label": "Lower Bracket Final", "bo": 3, "a": "SINQU", "b": "BOJONG"},
+  {"stage": "Playoffs", "date": "2026-11-28", "time": "20:00", "label": "Upper Bracket Final", "bo": 3, "a": "Prestige", "b": "HAVU"},
   {"stage": "Playoffs", "date": "2026-11-29", "time": "17:30", "label": "Consolidation Final", "bo": 3},
   {"stage": "Playoffs", "date": "2026-11-29", "time": "20:30", "label": "Grand Final", "bo": 3}
 ];
