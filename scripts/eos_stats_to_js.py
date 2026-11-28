@@ -260,10 +260,97 @@ def player_photos(players, team_logos):
     return {p: files[norm_name(p)] for p in players if norm_name(p) in files}
 
 
+DATED = re.compile(r'\d{4}-\d{2}-\d{2}_\d{2}-\d{2}')
+RESULT = re.compile(r'^(.+?)\s+(\d+)\s*[–—-]\s*(.+?)\s+(\d+)$')
+
+
+def load_playoff_schedule():
+    """Playoff entries from schedule.js (one JSON object per line)."""
+    path = os.path.join(os.path.dirname(OUT), 'schedule.js')
+    if not os.path.exists(path):
+        return []
+    out = []
+    for line in open(path, encoding='utf-8'):
+        m = re.search(r'\{.*\}', line)
+        if m and '"Playoffs"' in line:
+            out.append(json.loads(m.group(0)))
+    return out
+
+
+def date_undated_demos(wb):
+    """Give demos named without the match id and date (e.g. 'HAVU-BOJONG-de_nuke') the date of their playoff
+    match from schedule.js, so the site groups them into one series and counts them as playoffs.
+
+     If the two teams meet once in the playoffs, all their undated maps go to that match. If they meet more
+    than once, the maps are taken in sheet order and cut into series (first to 2 map wins), and the n-th
+    series goes to the n-th playoff entry for that pair - the sheet is sorted by name, so check the result. The new name keeps the original and adds a
+    stable id plus the scheduled date and time, in the same pattern as real demo names.
+    """
+    import hashlib
+    ws = wb['Matches']
+    rows = list(ws.iter_rows(min_row=2))
+    head = [c.value for c in next(ws.iter_rows(max_row=1))]
+    di, ri = head.index('Demo file'), head.index('Result')
+    by_pair = {}
+    for r in rows:
+        name, res = r[di].value, r[ri].value
+        if not name or DATED.search(str(name)):
+            continue
+        m = RESULT.match(str(res or ''))
+        if not m:
+            continue
+        by_pair.setdefault(tuple(sorted((m.group(1), m.group(3)))), []).append((str(name), m.group(1), int(m.group(2)), m.group(3), int(m.group(4))))
+    if not by_pair:
+        return {}
+    sched = load_playoff_schedule()
+    rename = {}
+    for pair, maps in by_pair.items():
+        entries = sorted([e for e in sched if e.get('a') and e.get('b') and tuple(sorted((e['a'], e['b']))) == pair],
+                         key=lambda e: (e['date'], e.get('time', '')))
+        if len(entries) <= 1:
+            series = [maps]   # one playoff meeting: all their undated maps belong to it
+        else:
+            print(f'WARNING: {pair[0]} and {pair[1]} meet {len(entries)} times in the playoffs; undated maps are split '
+                  'in sheet order - check the series on the site')
+            series = None
+        cur, wins = [], {}
+        split = series is None
+        if split:
+            series = []
+        for mp in (maps if split else []):
+            cur.append(mp)
+            w = mp[1] if mp[2] > mp[4] else mp[3]
+            wins[w] = wins.get(w, 0) + 1
+            if max(wins.values()) >= 2:
+                series.append(cur); cur, wins = [], {}
+        if cur:
+            series.append(cur)
+        for i, ser in enumerate(series):
+            if i >= len(entries):
+                print(f'WARNING: no playoff match in schedule.js for {pair[0]} vs {pair[1]} (series {i + 1}); '
+                      f'these maps count as regular season: ' + ', '.join(m[0] for m in ser))
+                continue
+            e = entries[i]
+            h = hashlib.md5((e['label'] + e['date']).encode()).hexdigest()
+            uid = f'{h[:8]}-{h[8:12]}-{h[12:16]}-{h[16:20]}-{h[20:32]}'
+            hh, mm = (int(x) for x in e.get('time', '00:00').split(':'))
+            for k, mp in enumerate(ser):
+                t = hh * 60 + mm + 50 * k
+                rename[mp[0]] = f'{mp[0]}-{uid}-{e["date"]}_{t // 60:02d}-{t % 60:02d}-00'
+            print(f'Undated demos matched to {e["label"]} ({e["date"]}): ' + ', '.join(m[0] for m in ser))
+    for sh in wb.worksheets:
+        for row in sh.iter_rows():
+            for c in row:
+                if isinstance(c.value, str) and c.value in rename:
+                    c.value = rename[c.value]
+    return rename
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     wb = openpyxl.load_workbook(sys.argv[1], data_only=True)
+    date_undated_demos(wb)
 
     lb_h, lb_rows, lb_tail = read_table(wb['Leaderboard'])
     adv_h, adv_rows, _ = read_table(wb['Advanced'], header_rows=2, group_row=0)
